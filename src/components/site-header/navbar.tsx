@@ -22,7 +22,7 @@ export async function Navbar() {
     console.error("Navbar error:", error);
     // Fallback to prevent navbar from crashing
     user = undefined;
-    megaMenu = { artist: [], album: [], playlist: [], show: [] };
+    megaMenu = { top_artists: [], top_playlists: [], new_releases: [] };
   }
 
   return (

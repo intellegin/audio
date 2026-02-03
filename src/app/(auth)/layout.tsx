@@ -19,7 +19,10 @@ export default async function AuthLayout({ children }: AuthLayoutProps) {
     redirect("/");
   }
 
-  const imageUrl = `/images/artists/${+(Math.random() * 10).toFixed()}.png`;
+  // Use a deterministic image selection based on a hash of the request
+  // This prevents hydration mismatch from Math.random()
+  const imageIndex = Math.floor(Date.now() / 1000) % 11; // Cycle through 0-10 based on timestamp
+  const imageUrl = `/images/artists/${imageIndex}.png`;
 
   return (
     <div className="grid h-screen lg:grid-cols-2">

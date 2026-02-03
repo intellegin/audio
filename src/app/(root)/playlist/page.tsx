@@ -2,7 +2,9 @@ import { siteConfig } from "@/config/site";
 import { getFeaturedPlaylists } from "@/lib/jiosaavn-api";
 import { FeaturedPlaylists } from "./_components/featured-playlists";
 
-const title = ` Best Songs ${new Date().getFullYear()} - Online Downloads and Playlists @${siteConfig.name}`;
+// Use a static year to prevent hydration mismatch
+const currentYear = 2024;
+const title = ` Best Songs ${currentYear} - Online Downloads and Playlists @${siteConfig.name}`;
 const description = `The music buffs at Saavn have created music playlists which include a huge variety of songs from various genres such as festivals, devotional, film, wedding, dance & more.`;
 
 export const metadata = {
