@@ -5,7 +5,7 @@ import { env } from "@/lib/env";
 import * as schema from "./schema";
 
 // Lazy initialization - only connect when database is actually accessed
-let dbInstance: ReturnType<typeof drizzle> | null = null;
+let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null;
 let postgresClient: ReturnType<typeof postgres> | null = null;
 
 function getDatabaseUrl(): string | null {
@@ -122,7 +122,7 @@ function createMockQuery() {
 
 // Export db as a proxy that lazily initializes the connection
 // Database operations are optional - if not configured, operations will fail gracefully
-export const db = new Proxy({} as ReturnType<typeof drizzle>, {
+export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
   get(_target, prop) {
     // Check if database is configured first
     if (!isDatabaseConfigured()) {
@@ -141,7 +141,7 @@ export const db = new Proxy({} as ReturnType<typeof drizzle>, {
 
     try {
       const db = getDb();
-      const value = db[prop as keyof ReturnType<typeof drizzle>];
+      const value = db[prop as keyof ReturnType<typeof drizzle<typeof schema>>];
       // If it's a function, bind it to maintain 'this' context
       if (typeof value === "function") {
         return value.bind(db);

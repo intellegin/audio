@@ -817,23 +817,20 @@ export async function getTopSearches(): Promise<TopSearch[]> {
     return (popular.MediaContainer.Metadata || []).map((track) => ({
       id: track.ratingKey,
       name: track.title,
+      explicit: false, // Plex doesn't provide explicit flag
       subtitle: track.grandparentTitle || "",
       type: "song" as const,
       image: getPlexImageUrl(track.thumb || track.grandparentThumb, baseUrl, plexToken),
       url: `/song/${track.ratingKey}`,
       album: track.parentTitle || "",
-      artist_map: {
-        primary_artists: track.grandparentTitle ? [{
-          id: track.grandparentKey || "",
-          name: track.grandparentTitle,
-          role: "primary_artist",
-          image: getPlexImageUrl(track.grandparentThumb, baseUrl, plexToken),
-          url: `/artist/${track.grandparentKey || ""}`,
-          type: "artist",
-        }] : [],
-        artists: [],
-        featured_artists: [],
-      },
+      artist_map: track.grandparentTitle ? [{
+        id: track.grandparentKey || "",
+        name: track.grandparentTitle,
+        role: "primary_artist",
+        image: getPlexImageUrl(track.grandparentThumb, baseUrl, plexToken),
+        url: `/artist/${track.grandparentKey || ""}`,
+        type: "artist",
+      }] : [],
     }));
   } catch (error) {
     console.error("Plex API error in getTopSearches:", error);

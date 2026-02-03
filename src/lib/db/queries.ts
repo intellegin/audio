@@ -67,11 +67,11 @@ export const getUserFavorites = unstable_cache(
       const favorites = await db.query.favorites.findFirst({
         where: (favorites, { eq }) => eq(favorites.userId, userId),
       });
-      return favorites;
+      return favorites ?? undefined;
     } catch (error) {
-      // Database not configured - return null
+      // Database not configured - return undefined
       if (error instanceof Error && error.message.includes("not configured")) {
-        return null;
+        return undefined;
       }
       throw error;
     }

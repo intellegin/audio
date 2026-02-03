@@ -5,7 +5,9 @@ import type { Playlist } from "./playlist";
 import type { Song } from "./song";
 
 type A<T> = {
-  position: number;
+  count: number;
+  last_page: boolean;
+  position?: number; // Optional for backward compatibility
   data: T[];
 };
 
