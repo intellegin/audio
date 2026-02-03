@@ -83,19 +83,6 @@ export async function SiteFooter() {
         </div>
       </div>
 
-      <div className="mx-auto mt-4 flex max-w-7xl flex-col items-center justify-center gap-4 border-t py-6">
-        <p className="max-w-4xl text-center text-xs text-muted-foreground lg:text-sm">
-          <Link href="/" className="inline-flex items-center justify-center">
-            <span className="font-heading text-base tracking-wide text-primary underline drop-shadow-md">
-              {siteConfig.name}
-            </span>
-          </Link>{" "}
-          is not affiliated with JioSaavn. All trademarks and copyrights belong
-          to their respective owners. All media, images, and songs are the
-          property of their respective owners. This site is for educational
-          purposes only.
-        </p>
-      </div>
     </footer>
   );
 }
