@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { siteConfig } from "@/config/site";
 import { getUser } from "@/lib/auth";
 import { getMegaMenu } from "@/lib/music-api";
 import { cn } from "@/lib/utils";
