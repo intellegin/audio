@@ -35,6 +35,7 @@ export const authConfig: NextAuthConfig = {
                 id: "admin-user-id",
                 email: ADMIN_EMAIL,
                 name: "Admin User",
+                role: "admin",
               };
             }
           }
@@ -69,6 +70,7 @@ export const authConfig: NextAuthConfig = {
                     id: "admin-user-id",
                     email: ADMIN_EMAIL,
                     name: "Admin User",
+                    role: "admin",
                   };
                 }
               }
@@ -112,13 +114,14 @@ export const authConfig: NextAuthConfig = {
           }
 
           console.log("✅ Password valid! Returning user object");
-          // Return user object for NextAuth
+          // Return user object for NextAuth with role
           return {
             id: dbUser.id,
             email: dbUser.email,
             name: dbUser.name || dbUser.email,
             username: dbUser.username,
             image: dbUser.image,
+            role: dbUser.role || "user", // Default to "user" if role not set
           };
         } catch (error) {
           console.error("❌ Authorization error:", error);
@@ -135,6 +138,7 @@ export const authConfig: NextAuthConfig = {
                   id: "admin-user-id",
                   email: ADMIN_EMAIL,
                   name: "Admin User",
+                  role: "admin",
                 };
               }
             }

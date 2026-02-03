@@ -22,7 +22,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { useIsMounted } from "@/hooks/use-is-mouted";
 
 type UserDropdownProps = {
   user?: User;
@@ -30,7 +29,6 @@ type UserDropdownProps = {
 
 export function UserDropdown({ user }: UserDropdownProps) {
   const { setTheme } = useTheme();
-  const isMounted = useIsMounted();
 
   async function signOutHandler() {
     try {

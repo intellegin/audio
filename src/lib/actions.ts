@@ -34,7 +34,12 @@ export async function createNewAccount(
 
   await db
     .insert(users)
-    .values({ username: randomUUID(), email, password_hash: hashedPassword });
+    .values({ 
+      username: randomUUID(), 
+      email, 
+      password_hash: hashedPassword,
+      role: "user", // New users get "user" role by default
+    });
 
   redirect("/");
 }

@@ -8,20 +8,20 @@ import type { JWT } from "next-auth/jwt"; // eslint-disable-line @typescript-esl
  *
  * @see https://next-auth.js.org/getting-started/typescript#module-augmentation
  */
+export type UserRole = "admin" | "user" | "guest";
+
 declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
       username?: string | null;
-      // ...other properties
-      // role: UserRole;
+      role: UserRole;
     } & DefaultSession["user"];
   }
 
   interface User {
     username?: string | null;
-    // ...other properties
-    // role: UserRole;
+    role?: UserRole;
   }
 }
 
@@ -30,5 +30,6 @@ declare module "next-auth/jwt" {
     id: string;
     email: string;
     username?: string | null;
+    role?: UserRole;
   }
 }

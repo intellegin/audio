@@ -24,6 +24,7 @@ export const users = pgTable("user", {
   username: text("username").unique(),
   password: text("password"), // Legacy field, using password_hash from Supabase
   password_hash: text("password_hash"), // Supabase auth.users table uses password_hash
+  role: text("role").default("user").notNull(), // Role: "admin", "user", or "guest"
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
 });

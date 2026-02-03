@@ -36,16 +36,19 @@ async function seedAdminUser() {
 
     if (existingUser) {
       console.log(`⚠️  User ${adminEmail} already exists.`);
-      console.log("Updating password...");
+      console.log("Updating password and role...");
 
       const hashedPassword = await hash(adminPassword, 10);
 
       await db
         .update(users)
-        .set({ password_hash: hashedPassword })
+        .set({ 
+          password_hash: hashedPassword,
+          role: "admin",
+        })
         .where(eq(users.email, adminEmail));
 
-      console.log("✅ Admin user password updated successfully!");
+      console.log("✅ Admin user password and role updated successfully!");
     } else {
       console.log(`Creating admin user: ${adminEmail}`);
 
@@ -55,6 +58,7 @@ async function seedAdminUser() {
         email: adminEmail,
         password_hash: hashedPassword,
         name: "Admin User",
+        role: "admin",
       });
 
       console.log("✅ Admin user created successfully!");
