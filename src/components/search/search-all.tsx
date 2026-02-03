@@ -16,7 +16,7 @@ export function SearchAll({ query, data }: SearchAllProps) {
   return (
     <div className="gap-2 space-y-4 md:grid md:grid-cols-2 md:space-y-0 lg:grid-cols-3 xl:grid-cols-4">
       {Object.entries(data)
-        .sort(([, a], [, b]) => a.position - b.position)
+        .sort(([, a], [, b]) => (a.position ?? 0) - (b.position ?? 0))
         .map(([key, value]) => {
           if (!value.data.length) return null;
 
