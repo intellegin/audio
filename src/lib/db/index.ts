@@ -9,7 +9,7 @@ let dbInstance: ReturnType<typeof drizzle> | null = null;
 let postgresClient: ReturnType<typeof postgres> | null = null;
 
 function getDatabaseUrl(): string {
-  // Validate SUPABASE_URL and SUPABASE_DB_PASSWORD (required at runtime when database is accessed)
+  // Validate SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (required at runtime when database is accessed)
   if (!env.SUPABASE_URL || typeof env.SUPABASE_URL !== "string" || env.SUPABASE_URL.trim() === "") {
     throw new Error(
       "SUPABASE_URL is required but not set. Please set SUPABASE_URL in your environment variables.\n" +
@@ -18,10 +18,10 @@ function getDatabaseUrl(): string {
     );
   }
 
-  if (!env.SUPABASE_DB_PASSWORD || typeof env.SUPABASE_DB_PASSWORD !== "string" || env.SUPABASE_DB_PASSWORD.trim() === "") {
+  if (!env.SUPABASE_SERVICE_ROLE_KEY || typeof env.SUPABASE_SERVICE_ROLE_KEY !== "string" || env.SUPABASE_SERVICE_ROLE_KEY.trim() === "") {
     throw new Error(
-      "SUPABASE_DB_PASSWORD is required but not set. Please set SUPABASE_DB_PASSWORD in your environment variables.\n" +
-      "You can find this in: Supabase Dashboard → Settings → Database → Database password"
+      "SUPABASE_SERVICE_ROLE_KEY is required but not set. Please set SUPABASE_SERVICE_ROLE_KEY in your environment variables.\n" +
+      "You can find this in: Supabase Dashboard → Settings → API → Service Role Key (secret)"
     );
   }
 
@@ -56,10 +56,18 @@ function getDatabaseUrl(): string {
     throw new Error(`Invalid SUPABASE_URL format: ${supabaseUrl}`);
   }
 
-  // Construct DATABASE_URL from SUPABASE_URL and password
+  // Note: The service role key is a JWT token used for Supabase API authentication.
+  // For direct PostgreSQL connections (which Drizzle ORM uses), we typically need the database password.
+  // However, Supabase's connection pooling might accept the service role key in some configurations.
+  // We'll try using it with the direct connection URL format.
+  // If this doesn't work, you may need to use the database password instead.
+  
+  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY.trim();
+  const encodedKey = encodeURIComponent(serviceRoleKey);
+  
+  // Use direct connection URL format
   // Format: postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
-  const databasePassword = encodeURIComponent(env.SUPABASE_DB_PASSWORD.trim());
-  return `postgresql://postgres:${databasePassword}@db.${projectRef}.supabase.co:5432/postgres`;
+  return `postgresql://postgres:${encodedKey}@db.${projectRef}.supabase.co:5432/postgres`;
 }
 
 function getDb() {

@@ -13,7 +13,7 @@ import { users } from "./db/schema";
 // Only use adapter if Supabase is configured
 function getAdapter(): Adapter | undefined {
   // Check if Supabase is configured (optional for local dev)
-  if (!env.SUPABASE_URL || !env.SUPABASE_DB_PASSWORD) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
     return undefined; // No adapter - sessions will be JWT-only
   }
   try {

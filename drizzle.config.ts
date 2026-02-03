@@ -7,20 +7,20 @@ import { siteConfig } from "@/config/site";
 
 loadEnvConfig(cwd());
 
-// Construct DATABASE_URL from SUPABASE_URL and SUPABASE_DB_PASSWORD
+// Construct DATABASE_URL from SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
 function getDatabaseUrl(): string {
   const supabaseUrl = process.env.SUPABASE_URL;
-  const supabasePassword = process.env.SUPABASE_DB_PASSWORD;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !supabasePassword) {
-    console.error("'SUPABASE_URL' and 'SUPABASE_DB_PASSWORD' must be set in the environment variables");
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error("'SUPABASE_URL' and 'SUPABASE_SERVICE_ROLE_KEY' must be set in the environment variables");
     console.error("\nTo set them up:");
     console.error("1. Create a .env.local file in the project root");
     console.error("2. Add: SUPABASE_URL=https://[project-ref].supabase.co");
-    console.error("3. Add: SUPABASE_DB_PASSWORD=your-database-password");
+    console.error("3. Add: SUPABASE_SERVICE_ROLE_KEY=your-service-role-key");
     console.error("\nYou can find these values in:");
     console.error("- Supabase Dashboard → Project Settings → API → Project URL");
-    console.error("- Supabase Dashboard → Settings → Database → Database password");
+    console.error("- Supabase Dashboard → Settings → API → Service Role Key (secret)");
     process.exit(1);
   }
 
@@ -43,8 +43,8 @@ function getDatabaseUrl(): string {
       process.exit(1);
     }
     const projectRef = match[1];
-    const encodedPassword = encodeURIComponent(supabasePassword.trim());
-    return `postgresql://postgres:${encodedPassword}@db.${projectRef}.supabase.co:5432/postgres`;
+    const encodedKey = encodeURIComponent(serviceRoleKey.trim());
+    return `postgresql://postgres:${encodedKey}@db.${projectRef}.supabase.co:5432/postgres`;
   } catch (error) {
     console.error(`Invalid SUPABASE_URL: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);

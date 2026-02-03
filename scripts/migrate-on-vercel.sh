@@ -6,14 +6,14 @@ set -e
 
 echo "Running database migrations..."
 
-# Check if SUPABASE_URL and SUPABASE_DB_PASSWORD are set
+# Check if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set
 if [ -z "$SUPABASE_URL" ]; then
   echo "Error: SUPABASE_URL is not set"
   exit 1
 fi
 
-if [ -z "$SUPABASE_DB_PASSWORD" ]; then
-  echo "Error: SUPABASE_DB_PASSWORD is not set"
+if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+  echo "Error: SUPABASE_SERVICE_ROLE_KEY is not set"
   exit 1
 fi
 

@@ -82,12 +82,10 @@ export const env = createEnv({
       .optional()
       .describe("Supabase project URL (e.g., https://[project-ref].supabase.co)"),
 
-    SUPABASE_DB_PASSWORD: z
+    SUPABASE_SERVICE_ROLE_KEY: z
       .string()
       .optional()
-      .describe("Supabase database password"),
-
-    SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+      .describe("Supabase service role key (used for database connection)"),
 
     /* -----------------------------------------------------------------------------------------------
      * Upstash Rate Limiting (Redis)
