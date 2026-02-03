@@ -25,39 +25,22 @@ export const env = createEnv({
      * NextAuth.js
      * -----------------------------------------------------------------------------------------------*/
 
-    AUTH_SECRET:
-      process.env.NODE_ENV === "production" ?
-        z.string({ required_error: "Auth Secret is invalid or missing" })
-      : z.string().optional(),
-    AUTH_URL: z.preprocess(
-      // This makes Vercel deployments not fail if you don't set NEXTAUTH_URL
-      // Since NextAuth.js automatically uses the VERCEL_URL if present.
-      (str) => process.env.VERCEL_URL ?? str,
-      // VERCEL_URL doesn't include `https` so it cant be validated as a URL
-      process.env.VERCEL ? z.string() : z.string().url()
-    ),
+    AUTH_SECRET: z.string().optional(),
+    AUTH_URL: z.string().optional(),
 
     /* -----------------------------------------------------------------------------------------------
      * Google OAuth
      * -----------------------------------------------------------------------------------------------*/
 
-    GOOGLE_CLIENT_ID: z
-      .string()
-      .min(1, { message: "Google Client ID is invalid or missing" }),
-    GOOGLE_CLIENT_SECRET: z
-      .string()
-      .min(1, { message: "Google Client Secret is invalid or missing" }),
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
 
     /* -----------------------------------------------------------------------------------------------
      * Github OAuth
      * -----------------------------------------------------------------------------------------------*/
 
-    GITHUB_CLIENT_ID: z
-      .string()
-      .min(1, { message: "Github Client ID is invalid or missing" }),
-    GITHUB_CLIENT_SECRET: z
-      .string()
-      .min(1, { message: "Github Client Secret is invalid or missing" }),
+    GITHUB_CLIENT_ID: z.string().optional(),
+    GITHUB_CLIENT_SECRET: z.string().optional(),
 
     /* -----------------------------------------------------------------------------------------------
      * JioSaavn API URL (https://github.com/rajput-hemant/jiosaavn-api-ts)
@@ -96,6 +79,12 @@ export const env = createEnv({
     DATABASE_URL: z
       .string()
       .min(1, { message: "Database URL is invalid or missing" }),
+
+    /* -----------------------------------------------------------------------------------------------
+     * Supabase Service Role Key (for admin operations)
+     * -----------------------------------------------------------------------------------------------*/
+
+    SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
 
     /* -----------------------------------------------------------------------------------------------
      * Upstash Rate Limiting (Redis)

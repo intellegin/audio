@@ -6,6 +6,7 @@ import NextAuth from "next-auth";
 import type { Adapter } from "next-auth/adapters";
 
 import { authConfig } from "@/config/auth";
+import { env } from "./env";
 import { db } from "./db";
 import { users } from "./db/schema";
 
@@ -17,6 +18,8 @@ export const {
   unstable_update: update,
 } = NextAuth({
   ...authConfig,
+  secret: process.env.AUTH_SECRET || "development-secret-change-in-production",
+  trustHost: true, // Required for Vercel deployments
 
   adapter: DrizzleAdapter(db) as Adapter,
 

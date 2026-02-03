@@ -11,14 +11,20 @@ import { loginSchema } from "@/lib/validations";
 
 export const authConfig: NextAuthConfig = {
   providers: [
-    GoogleProvider({
-      clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET,
-    }),
-    GitHubProvider({
-      clientId: env.GITHUB_CLIENT_ID,
-      clientSecret: env.GITHUB_CLIENT_SECRET,
-    }),
+    // Only add Google OAuth if credentials are provided
+    ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? [
+      GoogleProvider({
+        clientId: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+      }),
+    ] : []),
+    // Only add GitHub OAuth if credentials are provided
+    ...(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET ? [
+      GitHubProvider({
+        clientId: env.GITHUB_CLIENT_ID,
+        clientSecret: env.GITHUB_CLIENT_SECRET,
+      }),
+    ] : []),
     CredentialsProvider({
       async authorize(credentials) {
         const validatedFields = loginSchema.safeParse(credentials);
