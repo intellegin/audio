@@ -61,11 +61,33 @@ export const env = createEnv({
 
     /* -----------------------------------------------------------------------------------------------
      * JioSaavn API URL (https://github.com/rajput-hemant/jiosaavn-api-ts)
+     * Optional if using Plex or custom API
      * -----------------------------------------------------------------------------------------------*/
 
     JIOSAAVN_API_URL: z
       .string()
-      .url({ message: "JioSaavn API URL is invalid or missing" }),
+      .url()
+      .optional(),
+
+    /* -----------------------------------------------------------------------------------------------
+     * Plex Media Server Configuration
+     * -----------------------------------------------------------------------------------------------*/
+
+    PLEX_URL: z
+      .string()
+      .url()
+      .optional(),
+    PLEX_TOKEN: z
+      .string()
+      .optional(),
+
+    /* -----------------------------------------------------------------------------------------------
+     * API Provider Selection
+     * -----------------------------------------------------------------------------------------------*/
+
+    API_PROVIDER: z
+      .enum(["jiosaavn", "plex", "custom"])
+      .default("jiosaavn"),
 
     /* -----------------------------------------------------------------------------------------------
      * Postgres Database URL (Supabase)

@@ -1,0 +1,142 @@
+/**
+ * Unified Music API Layer
+ * 
+ * This file provides a unified interface for music data, routing to either
+ * JioSaavn API, Plex API, or custom API based on configuration.
+ */
+
+import { env } from "./env";
+import * as jiosaavnApi from "./jiosaavn-api";
+import * as plexApi from "./plex-api";
+
+// Re-export all types
+export * from "./jiosaavn-api";
+
+/**
+ * Get the active API provider based on environment configuration
+ */
+function getApiProvider() {
+  const provider = env.API_PROVIDER || "jiosaavn";
+  
+  if (provider === "plex") {
+    // Validate Plex configuration
+    if (!env.PLEX_URL || !env.PLEX_TOKEN) {
+      console.warn("Plex API selected but PLEX_URL or PLEX_TOKEN not configured. Falling back to JioSaavn.");
+      return "jiosaavn";
+    }
+    return "plex";
+  }
+  
+  if (provider === "custom") {
+    // Custom API would use JioSaavn format but different URL
+    return "jiosaavn"; // Uses JIOSAAVN_API_URL which can point to custom API
+  }
+  
+  return "jiosaavn";
+}
+
+/**
+ * Unified API functions that route to the correct provider
+ */
+export async function getHomeData(lang?: any[], mini = true) {
+  const provider = getApiProvider();
+  
+  if (provider === "plex") {
+    return plexApi.getHomeData(lang, mini);
+  }
+  
+  return jiosaavnApi.getHomeData(lang, mini);
+}
+
+export async function getSongDetails(token: string | string[], mini = false) {
+  const provider = getApiProvider();
+  
+  if (provider === "plex") {
+    return plexApi.getSongDetails(token, mini);
+  }
+  
+  return jiosaavnApi.getSongDetails(token, mini);
+}
+
+export async function getAlbumDetails(token: string, mini = true) {
+  const provider = getApiProvider();
+  
+  if (provider === "plex") {
+    return plexApi.getAlbumDetails(token, mini);
+  }
+  
+  return jiosaavnApi.getAlbumDetails(token, mini);
+}
+
+export async function getArtistDetails(token: string, mini = true) {
+  const provider = getApiProvider();
+  
+  if (provider === "plex") {
+    return plexApi.getArtistDetails(token, mini);
+  }
+  
+  return jiosaavnApi.getArtistDetails(token, mini);
+}
+
+export async function searchAll(query: string) {
+  const provider = getApiProvider();
+  
+  if (provider === "plex") {
+    return plexApi.searchAll(query);
+  }
+  
+  return jiosaavnApi.searchAll(query);
+}
+
+export async function getMegaMenu(entity = false, lang?: any[]) {
+  const provider = getApiProvider();
+  
+  if (provider === "plex") {
+    return plexApi.getMegaMenu(entity, lang);
+  }
+  
+  return jiosaavnApi.getMegaMenu(entity, lang);
+}
+
+export async function getFooterDetails(lang?: any[]) {
+  const provider = getApiProvider();
+  
+  if (provider === "plex") {
+    return plexApi.getFooterDetails(lang);
+  }
+  
+  return jiosaavnApi.getFooterDetails(lang);
+}
+
+export async function getTopSearches() {
+  const provider = getApiProvider();
+  
+  if (provider === "plex") {
+    return plexApi.getTopSearches();
+  }
+  
+  return jiosaavnApi.getTopSearches();
+}
+
+// Re-export other functions (they'll use the default provider logic)
+export const getSongRecommendations = jiosaavnApi.getSongRecommendations;
+export const getAlbumRecommendations = jiosaavnApi.getAlbumRecommendations;
+export const getPlaylistDetails = jiosaavnApi.getPlaylistDetails;
+export const getTrending = jiosaavnApi.getTrending;
+export const getLyrics = jiosaavnApi.getLyrics;
+export const getArtistTopSongs = jiosaavnApi.getArtistTopSongs;
+export const getActorsTopSongs = jiosaavnApi.getActorsTopSongs;
+export const getArtistsSongs = jiosaavnApi.getArtistsSongs;
+export const getArtistsAlbums = jiosaavnApi.getArtistsAlbums;
+export const getShowDetails = jiosaavnApi.getShowDetails;
+export const getShowEpisodes = jiosaavnApi.getShowEpisodes;
+export const getEpisodeDetails = jiosaavnApi.getEpisodeDetails;
+export const search = jiosaavnApi.search;
+export const getTopAlbums = jiosaavnApi.getTopAlbums;
+export const getCharts = jiosaavnApi.getCharts;
+export const getFeaturedPlaylists = jiosaavnApi.getFeaturedPlaylists;
+export const getTopArtists = jiosaavnApi.getTopArtists;
+export const getTopShows = jiosaavnApi.getTopShows;
+export const getFeaturedRadioStations = jiosaavnApi.getFeaturedRadioStations;
+export const getLabelDetails = jiosaavnApi.getLabelDetails;
+export const getMixDetails = jiosaavnApi.getMixDetails;

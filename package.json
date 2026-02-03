@@ -1,5 +1,5 @@
 {
-  "name": "infinitunes",
+  "name": "audio",
   "version": "0.3.0",
   "private": true,
   "type": "module",
@@ -14,6 +14,7 @@
     "fmt:check": "prettier --check \"**/*.{ts,tsx,mdx,json}\" --cache",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "bun src/lib/db/migrate.ts",
+    "db:migrate:node": "node --loader ts-node/esm src/lib/db/migrate.ts",
     "db:drop": "drizzle-kit drop",
     "db:push": "drizzle-kit push",
     "db:pull": "drizzle-kit introspect",
@@ -77,6 +78,7 @@
     "@commitlint/config-conventional": "^19.5.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.3.1",
     "@next/bundle-analyzer": "15.0.3",
+    "@next/env": "^16.1.6",
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "22.7.5",

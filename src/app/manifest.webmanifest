@@ -1,6 +1,6 @@
 {
-  "name": "Infinitunes",
-  "short_name": "Infinitunes",
+  "name": "Audio",
+  "short_name": "Audio",
   "start_url": "/",
   "icons": [
     { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },

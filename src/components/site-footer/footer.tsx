@@ -2,12 +2,13 @@ import Link from "next/link";
 
 import { languages } from "@/config/languages";
 import { siteConfig } from "@/config/site";
-import { getFooterDetails } from "@/lib/jiosaavn-api";
+import { getFooterDetails } from "@/lib/music-api";
 import { Icons } from "../icons";
 import { ThemeToggleGroup } from "./theme-toggle-group";
 
 export async function SiteFooter() {
-  const { artist, actor, album, playlist } = await getFooterDetails();
+  const footerDetails = await getFooterDetails();
+  const { artist = [], actor = [], album = [], playlist = [] } = footerDetails;
 
   const footerLinks = [
     { title: "Top Artist", data: artist },
@@ -63,18 +64,22 @@ export async function SiteFooter() {
             <div key={title} className="flex flex-col gap-2.5">
               <p className="text-sm font-semibold lg:text-sm">{title}</p>
 
-              <ul className="w-fit space-y-1">
-                {data.map(({ id, title, action }) => (
-                  <li
-                    key={id}
-                    className="w-full text-xs text-muted-foreground hover:text-secondary-foreground"
-                  >
-                    <Link href={action.replace("featured", "playlist")}>
-                      {title}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              {data.length > 0 ? (
+                <ul className="w-fit space-y-1">
+                  {data.map(({ id, title, action }) => (
+                    <li
+                      key={id}
+                      className="w-full text-xs text-muted-foreground hover:text-secondary-foreground"
+                    >
+                      <Link href={action.replace("featured", "playlist")}>
+                        {title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-muted-foreground">No data available</p>
+              )}
             </div>
           ))}
 

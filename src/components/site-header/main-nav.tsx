@@ -33,7 +33,7 @@ export function MainNav({ className, megaMenu }: MainNavProps) {
 
           <NavigationMenuContent className="p-6 md:w-[400px] lg:w-[1000px]">
             <h2 className="font-heading text-2xl drop-shadow-md dark:bg-gradient-to-br dark:from-neutral-200 dark:to-neutral-600 dark:bg-clip-text dark:text-transparent sm:text-2xl md:text-4xl">
-              What&apos;s Hot on Infinitunes
+              What&apos;s Hot on Audio
             </h2>
 
             <Separator className="my-2" />
@@ -42,47 +42,59 @@ export function MainNav({ className, megaMenu }: MainNavProps) {
               <div className="border-r">
                 <h4 className="font-heading text-2xl">New releases</h4>
 
-                {megaMenu.new_releases.map(({ name, url }) => (
-                  <ListItem
-                    key={name}
-                    title={name}
-                    href={
-                      url.includes("song") ?
-                        getHref(url, "song")
-                      : getHref(url, "album")
-                    }
-                  >
-                    {name}
-                  </ListItem>
-                ))}
+                {megaMenu.new_releases && megaMenu.new_releases.length > 0 ? (
+                  megaMenu.new_releases.map(({ name, url }) => (
+                    <ListItem
+                      key={name}
+                      title={name}
+                      href={
+                        url.includes("song") ?
+                          getHref(url, "song")
+                        : getHref(url, "album")
+                      }
+                    >
+                      {name}
+                    </ListItem>
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground">No data available</p>
+                )}
               </div>
 
               <div className="border-r">
                 <h4 className="font-heading text-2xl">Top Playlist</h4>
 
-                {megaMenu.top_playlists.map(({ name, url }) => (
-                  <ListItem
-                    key={name}
-                    title={name}
-                    href={getHref(url, "playlist")}
-                  >
-                    {name}
-                  </ListItem>
-                ))}
+                {megaMenu.top_playlists && megaMenu.top_playlists.length > 0 ? (
+                  megaMenu.top_playlists.map(({ name, url }) => (
+                    <ListItem
+                      key={name}
+                      title={name}
+                      href={getHref(url, "playlist")}
+                    >
+                      {name}
+                    </ListItem>
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground">No data available</p>
+                )}
               </div>
 
               <div>
                 <h4 className="font-heading text-2xl">Top Artists</h4>
 
-                {megaMenu.top_artists.map(({ name, url }) => (
-                  <ListItem
-                    key={name}
-                    title={name}
-                    href={getHref(url, "artist")}
-                  >
-                    {name}
-                  </ListItem>
-                ))}
+                {megaMenu.top_artists && megaMenu.top_artists.length > 0 ? (
+                  megaMenu.top_artists.map(({ name, url }) => (
+                    <ListItem
+                      key={name}
+                      title={name}
+                      href={getHref(url, "artist")}
+                    >
+                      {name}
+                    </ListItem>
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground">No data available</p>
+                )}
               </div>
             </div>
           </NavigationMenuContent>

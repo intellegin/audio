@@ -5,7 +5,7 @@ import type { Lang } from "@/types";
 
 import { siteConfig } from "@/config/site";
 import { getUser } from "@/lib/auth";
-import { getMegaMenu } from "@/lib/jiosaavn-api";
+import { getMegaMenu } from "@/lib/music-api";
 import { cn } from "@/lib/utils";
 import { SignedOut } from "../auth-control";
 import { Icons } from "../icons";

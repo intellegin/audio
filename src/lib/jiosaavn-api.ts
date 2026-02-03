@@ -48,13 +48,33 @@ async function jioSaavnGetCall<T>(
     lang: query && query["lang"] ? query.lang : (languages ?? "hindi"),
   };
 
-  const url = new URL(path, env.JIOSAAVN_API_URL);
+  const apiUrl = env.JIOSAAVN_API_URL;
+  if (!apiUrl) {
+    throw new Error("JIOSAAVN_API_URL is not configured. Please set it in your .env.local file or use a different API provider.");
+  }
+  const url = new URL(path, apiUrl);
   url.search = new URLSearchParams(queries).toString();
 
   const response = await fetch(url, { cache: "force-cache" });
+  
+  // Check if response is JSON before parsing
+  const contentType = response.headers.get("content-type");
+  if (!contentType?.includes("application/json")) {
+    const text = await response.text();
+    throw new Error(
+      `API returned non-JSON response (${response.status} ${response.statusText}). ` +
+      `The JioSaavn API may be blocked or unavailable. ` +
+      `Please check your JIOSAAVN_API_URL environment variable.`
+    );
+  }
+
   const data = (await response.json()) as CustomResponse<T>;
 
-  if (!response.ok) throw new Error(data.message);
+  if (!response.ok) {
+    throw new Error(
+      data.message || `API request failed: ${response.status} ${response.statusText}`
+    );
+  }
 
   return data.data!;
 }
@@ -71,10 +91,15 @@ async function jioSaavnGetCall<T>(
  * @returns Promise resolving to home page modules data.
  */
 export async function getHomeData(lang?: Lang[], mini = true) {
-  return await jioSaavnGetCall<Modules>("/modules", {
-    lang: lang?.join(",") ?? "",
-    mini: `${mini}`,
-  });
+  try {
+    return await jioSaavnGetCall<Modules>("/modules", {
+      lang: lang?.join(",") ?? "",
+      mini: `${mini}`,
+    });
+  } catch (error) {
+    // Return empty modules structure when API fails
+    return {} as Modules;
+  }
 }
 
 /* -----------------------------------------------------------------------------------------------
@@ -392,7 +417,12 @@ export async function getEpisodeDetails(
  * @returns Promise resolving to search suggestions
  */
 export async function getTopSearches() {
-  return await jioSaavnGetCall<TopSearch[]>("/search/top");
+  try {
+    return await jioSaavnGetCall<TopSearch[]>("/search/top");
+  } catch (error) {
+    // Return empty array when API fails
+    return [];
+  }
 }
 
 /**
@@ -665,10 +695,19 @@ export async function getMixDetails(
  * @returns A promise that resolves to the MegaMenu object.
  */
 export async function getMegaMenu(entity = false, lang?: Lang[]) {
-  return await jioSaavnGetCall<MegaMenu>("/get/mega-menu", {
-    entity: `${entity}`,
-    lang: lang?.join(",") ?? "",
-  });
+  try {
+    return await jioSaavnGetCall<MegaMenu>("/get/mega-menu", {
+      entity: `${entity}`,
+      lang: lang?.join(",") ?? "",
+    });
+  } catch (error) {
+    // Return empty mega menu when API fails
+    return {
+      top_artists: [],
+      top_playlists: [],
+      new_releases: [],
+    } as MegaMenu;
+  }
 }
 
 /**
@@ -677,7 +716,17 @@ export async function getMegaMenu(entity = false, lang?: Lang[]) {
  * @returns A promise that resolves to an object containing footer details.
  */
 export async function getFooterDetails(lang?: Lang[]) {
-  return await jioSaavnGetCall<FooterDetails>("/get/footer-details", {
-    lang: lang?.join(",") ?? "",
-  });
+  try {
+    return await jioSaavnGetCall<FooterDetails>("/get/footer-details", {
+      lang: lang?.join(",") ?? "",
+    });
+  } catch (error) {
+    // Return empty footer details when API fails
+    return {
+      playlist: [],
+      artist: [],
+      album: [],
+      actor: [],
+    } as FooterDetails;
+  }
 }

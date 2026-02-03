@@ -1,6 +1,6 @@
 export const siteConfig = {
-  name: "Infinitunes",
-  url: "https://infinitunes.rajputhemant.me",
+  name: "Audio",
+  url: "https://audio.rajputhemant.me",
   description:
     "A Simple Music Player Web App built using Next.js, shadcn/ui, TailwindCSS, DrizzleORM and more...",
 

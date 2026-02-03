@@ -1,7 +1,7 @@
 import { SliderCard } from "@/components/slider";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { siteConfig } from "@/config/site";
-import { getHomeData } from "@/lib/jiosaavn-api";
+import { getHomeData } from "@/lib/music-api";
 import { cn } from "@/lib/utils";
 
 const title = `Online Songs on ${siteConfig.name}: Download & Play Latest Music for Free`;
@@ -25,9 +25,27 @@ export const metadata = {
 
 export default async function HomePage() {
   const homedata = await getHomeData();
+  
+  // Check if we have any data
+  const entries = Object.entries(homedata);
+  if (entries.length === 0) {
+    return (
+      <div className="flex h-[calc(100vh-14rem)] flex-col items-center justify-center gap-4 px-4 text-center">
+        <h1 className="font-heading text-2xl drop-shadow dark:bg-gradient-to-br dark:from-neutral-200 dark:to-neutral-600 dark:bg-clip-text dark:text-transparent sm:text-3xl md:text-4xl">
+          Welcome to {siteConfig.name}
+        </h1>
+        <p className="max-w-md text-muted-foreground">
+          The UI is ready! Connect your API to see content here.
+        </p>
+      </div>
+    );
+  }
 
-  return Object.entries(homedata).map(([key, section]) => {
+  return entries.map(([key, section]) => {
     if ("random_songs_listid" in section || key === "discover") return null;
+    
+    // Skip sections with no data
+    if (!section.data || section.data.length === 0) return null;
 
     return (
       <div key={key} className="mb-4 space-y-4">

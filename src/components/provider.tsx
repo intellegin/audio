@@ -58,5 +58,5 @@ console.log(`
              .^!!^:      .:^^:                    
                  .........                        
                                                   
-            Welcome to Infinitunes!
+            Welcome to Audio!
 `);

@@ -42,6 +42,18 @@ bun i || pnpm i || npm i || yarn
 bun dev || pnpm dev || npm run dev || yarn dev
 ```
 
+## 📚 Documentation
+
+All documentation is available in the [`docs/`](./docs/) directory:
+
+- **[Quick Start Guide](./docs/QUICK_START_VERCEL.md)** - Get started in 5 minutes
+- **[Deployment Guide](./docs/VERCEL_DEPLOYMENT.md)** - Deploy to Vercel
+- **[Database Setup](./docs/SUPABASE_SETUP.md)** - Set up Supabase
+- **[API Configuration](./docs/API_CONFIGURATION.md)** - Configure Plex/JioSaavn API
+- **[Auto-Deployment](./docs/GITHUB_AUTO_DEPLOY.md)** - Set up GitHub auto-deployment
+
+See [`docs/README.md`](./docs/README.md) for the complete documentation index.
+
 <div align=center>
 
 ### Docker and Makefile

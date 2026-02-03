@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { getTopSearches } from "@/lib/jiosaavn-api";
+import { getTopSearches } from "@/lib/music-api";
 import { getHref, getImageSrc } from "@/lib/utils";
 import { SliderCard } from "../slider";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";

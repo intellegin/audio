@@ -1,7 +1,7 @@
 services:
-  infinitunes:
+  audio:
     build:
       dockerfile: Dockerfile
-    image: infinitunes
+    image: audio
     ports:
       - "3000:3000"
