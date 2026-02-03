@@ -29,13 +29,7 @@ export async function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b bg-background">
       <div className="container flex h-14 items-center space-x-4">
         <Link href="/" className="flex items-center">
-          <div className="flex items-center gap-1">
-            <Icons.Logo className="size-4" />
-
-            <span className="font-heading lowercase tracking-wide">
-              {siteConfig.name}
-            </span>
-          </div>
+          <Icons.Logo className="size-4" />
         </Link>
 
         <MainNav megaMenu={megaMenu} className="hidden lg:block" />
