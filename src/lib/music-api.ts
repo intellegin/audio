@@ -42,27 +42,19 @@ function getApiProvider() {
  * Synology NAS is only available to admin users
  */
 export async function getHomeData(lang?: any[], mini = true) {
-  // Check if user is admin and Synology is configured
-  let isAdminUser = false;
-  try {
-    isAdminUser = await isAdmin();
-  } catch (error) {
-    console.error("❌ Error checking admin status:", error);
-  }
-  
+  // Synology is available to all users (guests can read, authenticated users can interact)
   const synologyConfigured = env.SYNOLOGY_SERVER_URL && env.SYNOLOGY_USERNAME && env.SYNOLOGY_PASSWORD;
   
-  console.log("🎵 getHomeData - Admin check:", {
-    isAdminUser,
+  console.log("🎵 getHomeData - Synology check:", {
     synologyConfigured,
     hasServerUrl: !!env.SYNOLOGY_SERVER_URL,
     hasUsername: !!env.SYNOLOGY_USERNAME,
     hasPassword: !!env.SYNOLOGY_PASSWORD,
   });
   
-  if (isAdminUser && synologyConfigured) {
+  if (synologyConfigured) {
     try {
-      console.log("🎵 Using Synology NAS API");
+      console.log("🎵 Using Synology NAS API (available to all users)");
       const data = await synologyApi.getHomeData(lang, mini);
       console.log("🎵 Synology API returned:", {
         sections: Object.keys(data),
@@ -76,8 +68,6 @@ export async function getHomeData(lang?: any[], mini = true) {
         console.error("Stack:", error.stack);
       }
     }
-  } else {
-    console.log("🎵 Not using Synology - isAdmin:", isAdminUser, "configured:", synologyConfigured);
   }
   
   const provider = getApiProvider();
@@ -91,10 +81,9 @@ export async function getHomeData(lang?: any[], mini = true) {
 }
 
 export async function getSongDetails(token: string | string[], mini = false) {
-  const isAdminUser = await isAdmin();
   const synologyConfigured = env.SYNOLOGY_SERVER_URL && env.SYNOLOGY_USERNAME && env.SYNOLOGY_PASSWORD;
   
-  if (isAdminUser && synologyConfigured) {
+  if (synologyConfigured) {
     try {
       return await synologyApi.getSongDetails(token, mini);
     } catch (error) {
@@ -112,10 +101,9 @@ export async function getSongDetails(token: string | string[], mini = false) {
 }
 
 export async function getAlbumDetails(token: string, mini = true) {
-  const isAdminUser = await isAdmin();
   const synologyConfigured = env.SYNOLOGY_SERVER_URL && env.SYNOLOGY_USERNAME && env.SYNOLOGY_PASSWORD;
   
-  if (isAdminUser && synologyConfigured) {
+  if (synologyConfigured) {
     try {
       return await synologyApi.getAlbumDetails(token, mini);
     } catch (error) {
@@ -133,10 +121,9 @@ export async function getAlbumDetails(token: string, mini = true) {
 }
 
 export async function getArtistDetails(token: string, mini = true) {
-  const isAdminUser = await isAdmin();
   const synologyConfigured = env.SYNOLOGY_SERVER_URL && env.SYNOLOGY_USERNAME && env.SYNOLOGY_PASSWORD;
   
-  if (isAdminUser && synologyConfigured) {
+  if (synologyConfigured) {
     try {
       return await synologyApi.getArtistDetails(token, mini);
     } catch (error) {
@@ -154,10 +141,9 @@ export async function getArtistDetails(token: string, mini = true) {
 }
 
 export async function searchAll(query: string) {
-  const isAdminUser = await isAdmin();
   const synologyConfigured = env.SYNOLOGY_SERVER_URL && env.SYNOLOGY_USERNAME && env.SYNOLOGY_PASSWORD;
   
-  if (isAdminUser && synologyConfigured) {
+  if (synologyConfigured) {
     try {
       return await synologyApi.searchAll(query);
     } catch (error) {

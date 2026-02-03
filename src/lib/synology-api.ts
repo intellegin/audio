@@ -63,12 +63,12 @@ type AudioFileInfo = {
 };
 
 /**
- * Check if user has admin access
+ * Check if Synology is configured
+ * Music is accessible to all users (guests can read, authenticated users can interact)
  */
-async function checkAdminAccess() {
-  const hasAccess = await isAdmin();
-  if (!hasAccess) {
-    throw new Error("Access denied: Synology NAS is only available to admin users");
+function checkSynologyConfigured() {
+  if (!env.SYNOLOGY_SERVER_URL || !env.SYNOLOGY_USERNAME || !env.SYNOLOGY_PASSWORD) {
+    throw new Error("Synology NAS is not configured");
   }
 }
 
@@ -98,7 +98,7 @@ async function getSynologySession(): Promise<string> {
     return sessionId;
   }
 
-  await checkAdminAccess();
+  checkSynologyConfigured();
 
   const baseUrl = getSynologyBaseUrl();
   const username = env.SYNOLOGY_USERNAME;
@@ -168,7 +168,7 @@ async function getSynologySession(): Promise<string> {
  * Make API call to Synology File Station
  */
 async function fileStationApiCall<T>(api: string, method: string, params: Record<string, string> = {}): Promise<T> {
-  await checkAdminAccess();
+  checkSynologyConfigured();
   
   const baseUrl = getSynologyBaseUrl();
   const sessionId = await getSynologySession();
@@ -401,7 +401,7 @@ function mapFileToSong(file: AudioFileInfo, baseUrl: string, sessionId: string, 
  * Get home page data from Synology NAS
  */
 export async function getHomeData(lang?: Lang[], mini = true): Promise<Modules> {
-  await checkAdminAccess();
+  checkSynologyConfigured();
   
   try {
     const baseUrl = getSynologyBaseUrl();
@@ -483,7 +483,7 @@ export async function getHomeData(lang?: Lang[], mini = true): Promise<Modules> 
  * Get song details from Synology NAS
  */
 export async function getSongDetails(token: string | string[], mini = false): Promise<SongObj> {
-  await checkAdminAccess();
+  checkSynologyConfigured();
   
   const baseUrl = getSynologyBaseUrl();
   const sessionId = await getSynologySession();
@@ -517,7 +517,7 @@ export async function getSongDetails(token: string | string[], mini = false): Pr
  * Get album details from Synology NAS
  */
 export async function getAlbumDetails(token: string, mini = true): Promise<Album> {
-  await checkAdminAccess();
+  checkSynologyConfigured();
   
   const baseUrl = getSynologyBaseUrl();
   const sessionId = await getSynologySession();
@@ -563,7 +563,7 @@ export async function getAlbumDetails(token: string, mini = true): Promise<Album
  * Get artist details from Synology NAS
  */
 export async function getArtistDetails(token: string, mini = true): Promise<Artist> {
-  await checkAdminAccess();
+  checkSynologyConfigured();
   
   const baseUrl = getSynologyBaseUrl();
   const sessionId = await getSynologySession();
@@ -624,7 +624,7 @@ export async function getArtistDetails(token: string, mini = true): Promise<Arti
  * Search all content on Synology NAS
  */
 export async function searchAll(query: string): Promise<AllSearch> {
-  await checkAdminAccess();
+  checkSynologyConfigured();
   
   const baseUrl = getSynologyBaseUrl();
   const sessionId = await getSynologySession();
@@ -714,7 +714,7 @@ export async function searchAll(query: string): Promise<AllSearch> {
  * Stub functions for other API methods
  */
 export async function getMegaMenu(entity = false, lang?: Lang[]): Promise<MegaMenu> {
-  await checkAdminAccess();
+  checkSynologyConfigured();
   return {
     top_artists: [],
     top_playlists: [],
@@ -723,7 +723,7 @@ export async function getMegaMenu(entity = false, lang?: Lang[]): Promise<MegaMe
 }
 
 export async function getFooterDetails(lang?: Lang[]): Promise<FooterDetails> {
-  await checkAdminAccess();
+  checkSynologyConfigured();
   return {
     artist: [],
     actor: [],
@@ -733,6 +733,6 @@ export async function getFooterDetails(lang?: Lang[]): Promise<FooterDetails> {
 }
 
 export async function getTopSearches(): Promise<TopSearch[]> {
-  await checkAdminAccess();
+  checkSynologyConfigured();
   return [];
 }
