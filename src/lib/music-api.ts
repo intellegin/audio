@@ -2,11 +2,13 @@
  * Unified Music API Layer
  * 
  * This file provides a unified interface for music data, routing to either
- * JioSaavn API, Plex API, Synology NAS (admin only), or custom API based on configuration.
+ * JioSaavn API, Plex API, Synology NAS (available to all users), or custom API based on configuration.
+ * 
+ * Note: Synology NAS music is accessible to all users (guests can read, authenticated users can interact).
+ * Write operations (favorites, playlists) remain restricted to authenticated users.
  */
 
 import { env } from "./env";
-import { isAdmin } from "./auth";
 import * as jiosaavnApi from "./jiosaavn-api";
 import * as plexApi from "./plex-api";
 import * as synologyApi from "./synology-api";
@@ -39,7 +41,7 @@ function getApiProvider() {
 
 /**
  * Unified API functions that route to the correct provider
- * Synology NAS is only available to admin users
+ * Synology NAS is available to all users when configured
  */
 export async function getHomeData(lang?: any[], mini = true) {
   // Synology is available to all users (guests can read, authenticated users can interact)
