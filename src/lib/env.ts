@@ -92,6 +92,11 @@ export const env = createEnv({
       .optional()
       .describe("Supabase database password (required for direct PostgreSQL connections)"),
 
+    ADMIN_PASSWORD: z
+      .string()
+      .optional()
+      .describe("Password for the hardcoded admin user (intellegin@pm.me)"),
+
     /* -----------------------------------------------------------------------------------------------
      * Upstash Rate Limiting (Redis)
      * -----------------------------------------------------------------------------------------------*/

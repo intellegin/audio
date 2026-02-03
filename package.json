@@ -20,6 +20,7 @@
     "db:pull": "drizzle-kit introspect",
     "db:studio": "drizzle-kit studio",
     "db:check": "drizzle-kit check",
+    "db:seed": "tsx scripts/seed-admin-user.ts",
     "ui": "bunx shadcn",
     "clean": "rm -rf .next",
     "cleani": "rm -rf .next && rm -rf node_modules && bun i",
