@@ -34,7 +34,7 @@ export async function createNewAccount(
 
   await db
     .insert(users)
-    .values({ username: randomUUID(), email, password: hashedPassword });
+    .values({ username: randomUUID(), email, password_hash: hashedPassword });
 
   redirect("/");
 }
@@ -52,13 +52,16 @@ export async function resetPassword(
     throw new Error("User not found, please try signing up");
   }
 
-  if (!user.password) {
+  // Check password_hash first (Supabase), fallback to password (legacy)
+  const passwordToCheck = user.password_hash || user.password;
+  
+  if (!passwordToCheck) {
     throw new Error(
-      "User does not have a password, you might have signed up with a social account"
+      "User does not have a password set"
     );
   }
 
-  const isPasswordValid = await compare(password, user.password);
+  const isPasswordValid = await compare(password, passwordToCheck);
 
   if (!isPasswordValid) {
     throw new Error("Previous password is incorrect, please try again");
@@ -68,7 +71,7 @@ export async function resetPassword(
 
   await db
     .update(users)
-    .set({ password: hashedPassword })
+    .set({ password_hash: hashedPassword })
     .where(eq(users.email, email));
 
   redirect("/login");

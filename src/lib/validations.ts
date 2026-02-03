@@ -27,18 +27,10 @@ export const passwordSchema = z
   )
   .min(8, "Password must be at least 8 characters long.");
 
-export const loginSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("username"),
-    username: usernameSchema,
-    password: passwordSchema,
-  }),
-  z.object({
-    type: z.literal("email"),
-    email: emailSchema,
-    password: passwordSchema,
-  }),
-]);
+export const loginSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+});
 
 export const signUpSchema = z
   .object({

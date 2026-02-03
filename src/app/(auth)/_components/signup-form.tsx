@@ -26,7 +26,6 @@ import {
 } from "@/components/ui/tooltip";
 import { createNewAccount } from "@/lib/actions";
 import { signUpSchema } from "@/lib/validations";
-import { OAuthButtons } from "./oauth-buttons";
 
 type FormData = z.infer<typeof signUpSchema>;
 
@@ -200,11 +199,6 @@ export function SignUpForm() {
           Sign Up
         </Button>
       </form>
-
-      <OAuthButtons
-        isFormDisabled={isSubmitting}
-        setIsSubmitting={setIsSubmitting}
-      />
     </Form>
   );
 }

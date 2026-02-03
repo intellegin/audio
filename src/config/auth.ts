@@ -1,30 +1,13 @@
 import { compare } from "bcryptjs";
 import CredentialsProvider from "next-auth/providers/credentials";
-import GitHubProvider from "next-auth/providers/github";
-import GoogleProvider from "next-auth/providers/google";
 
 import type { NextAuthConfig } from "next-auth";
 
 import { db } from "@/lib/db";
-import { env } from "@/lib/env";
 import { loginSchema } from "@/lib/validations";
 
 export const authConfig: NextAuthConfig = {
   providers: [
-    // Only add Google OAuth if credentials are provided
-    ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? [
-      GoogleProvider({
-        clientId: env.GOOGLE_CLIENT_ID,
-        clientSecret: env.GOOGLE_CLIENT_SECRET,
-      }),
-    ] : []),
-    // Only add GitHub OAuth if credentials are provided
-    ...(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET ? [
-      GitHubProvider({
-        clientId: env.GITHUB_CLIENT_ID,
-        clientSecret: env.GITHUB_CLIENT_SECRET,
-      }),
-    ] : []),
     CredentialsProvider({
       async authorize(credentials) {
         const validatedFields = loginSchema.safeParse(credentials);
@@ -32,15 +15,16 @@ export const authConfig: NextAuthConfig = {
         if (validatedFields.success) {
           const user = validatedFields.data;
 
+          // Find user by email only
           const dbUser = await db.query.users.findFirst({
-            where: (u, { eq }) =>
-              user.type === "email" ?
-                eq(u.email, user.email!)
-              : eq(u.username, user.username!),
+            where: (u, { eq }) => eq(u.email, user.email),
           });
 
-          if (dbUser && dbUser.password) {
-            const isValid = await compare(user.password, dbUser.password);
+          // Check password_hash first (Supabase), fallback to password (legacy)
+          const passwordToCheck = dbUser?.password_hash || dbUser?.password;
+          
+          if (dbUser && passwordToCheck) {
+            const isValid = await compare(user.password, passwordToCheck);
 
             if (isValid) {
               return dbUser;
