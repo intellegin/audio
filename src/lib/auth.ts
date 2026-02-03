@@ -49,10 +49,34 @@ export const {
 
   events: {
     linkAccount: async ({ user }) => {
-      await db
-        .update(users)
-        .set({ emailVerified: new Date() })
-        .where(eq(users.id, user.id!));
+      // Skip database update for fallback admin user
+      if (user.id === "admin-user-id" || user.email === "intellegin@pm.me") {
+        return;
+      }
+      
+      // Only update database if it's configured
+      try {
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const dbPassword = process.env.SUPABASE_DB_PASSWORD;
+        
+        if (!supabaseUrl || !dbPassword || 
+            supabaseUrl === "your-supabase-url" || 
+            dbPassword === "your-database-password" ||
+            supabaseUrl.includes("your-") ||
+            dbPassword.includes("your-")) {
+          return; // Database not configured
+        }
+        
+        await db
+          .update(users)
+          .set({ emailVerified: new Date() })
+          .where(eq(users.id, user.id!));
+      } catch (error) {
+        // Silently fail if database is unavailable
+        if (error instanceof Error && !error.message.includes("ENOTFOUND") && !error.message.includes("getaddrinfo")) {
+          console.warn("Could not update user email verification:", error.message);
+        }
+      }
     },
   },
 
