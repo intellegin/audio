@@ -123,10 +123,35 @@ async function getSynologySession(): Promise<string> {
       throw new Error(`Synology login failed: ${response.statusText}`);
     }
 
-    const data = await response.json() as SynologyApiResponse<{ sid: string }>;
+    const data = await response.json() as SynologyApiResponse<{ sid: string; token?: string }> & { 
+      error?: { 
+        code?: number; 
+        errors?: { 
+          types?: Array<{ type: string }>; 
+          token?: string;
+        };
+      };
+    };
     
     if (!data.success || !data.data?.sid) {
-      throw new Error(`Synology login failed: ${data.error?.code || "Unknown error"}`);
+      const errorCode = data.error?.code;
+      const errorTypes = data.error?.errors?.types?.map(e => e.type) || [];
+      
+      if (errorCode === 403 && (errorTypes.includes("authenticator") || errorTypes.includes("otp"))) {
+        throw new Error(
+          "Synology NAS requires 2FA authentication. " +
+          "Please either:\n" +
+          "1. Disable 2FA for API access in Control Panel > Security > 2-Step Verification\n" +
+          "2. Create an application-specific password for API access\n" +
+          "3. Use a user account without 2FA enabled"
+        );
+      }
+      
+      if (errorCode === 402) {
+        throw new Error("Synology authentication failed: Invalid username or password");
+      }
+      
+      throw new Error(`Synology login failed: Code ${errorCode || "Unknown"}`);
     }
 
     sessionId = data.data.sid;
