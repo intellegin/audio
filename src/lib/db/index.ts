@@ -4,44 +4,57 @@ import postgres from "postgres";
 import { env } from "@/lib/env";
 import * as schema from "./schema";
 
-// Validate and normalize DATABASE_URL before creating connection
-if (!env.DATABASE_URL || typeof env.DATABASE_URL !== "string" || env.DATABASE_URL.trim() === "") {
+// Validate SUPABASE_URL and SUPABASE_DB_PASSWORD
+if (!env.SUPABASE_URL || typeof env.SUPABASE_URL !== "string" || env.SUPABASE_URL.trim() === "") {
   throw new Error(
-    "DATABASE_URL is required but not set. Please set DATABASE_URL in your environment variables.\n" +
-    "Format: postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres"
+    "SUPABASE_URL is required but not set. Please set SUPABASE_URL in your environment variables.\n" +
+    "Format: https://[project-ref].supabase.co"
   );
 }
 
-// Normalize DATABASE_URL - remove leading = if present (common env var mistake)
-let databaseUrl = env.DATABASE_URL.trim();
-if (databaseUrl.startsWith("=")) {
-  databaseUrl = databaseUrl.substring(1).trim();
-}
-
-// Auto-fix common Supabase URL issues
-// If it starts with https://, it's likely a Supabase project URL, not connection string
-if (databaseUrl.startsWith("https://")) {
+if (!env.SUPABASE_DB_PASSWORD || typeof env.SUPABASE_DB_PASSWORD !== "string" || env.SUPABASE_DB_PASSWORD.trim() === "") {
   throw new Error(
-    `DATABASE_URL appears to be a Supabase project URL, not a database connection string.\n` +
-    `You need the PostgreSQL connection string from:\n` +
-    `Supabase Dashboard → Settings → Database → Connection string (URI tab)\n` +
-    `Format: postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres\n` +
-    `Current value: "${databaseUrl.substring(0, 60)}..."`
+    "SUPABASE_DB_PASSWORD is required but not set. Please set SUPABASE_DB_PASSWORD in your environment variables.\n" +
+    "You can find this in: Supabase Dashboard → Settings → Database → Database password"
   );
 }
 
-// Validate URL format
-if (!databaseUrl.startsWith("postgresql://") && !databaseUrl.startsWith("postgres://")) {
-  throw new Error(
-    `DATABASE_URL must start with postgresql:// or postgres://\n` +
-    `Current value: "${databaseUrl.substring(0, 60)}..."\n` +
-    `Make sure you're using the PostgreSQL connection string from Supabase Dashboard → Settings → Database`
-  );
+// Normalize SUPABASE_URL - remove leading = if present (common env var mistake)
+let supabaseUrl = env.SUPABASE_URL.trim();
+if (supabaseUrl.startsWith("=")) {
+  supabaseUrl = supabaseUrl.substring(1).trim();
 }
 
-// Use normalized URL
-const normalizedDatabaseUrl = databaseUrl;
+// Remove trailing slash if present
+if (supabaseUrl.endsWith("/")) {
+  supabaseUrl = supabaseUrl.slice(0, -1);
+}
 
-const client = postgres(normalizedDatabaseUrl, { max: 1 });
+// Extract project reference from SUPABASE_URL
+// Format: https://[project-ref].supabase.co
+let projectRef: string;
+try {
+  const url = new URL(supabaseUrl);
+  const hostname = url.hostname;
+  
+  // Extract project ref from hostname (e.g., "rhvyeqwkvppghidcrxak" from "rhvyeqwkvppghidcrxak.supabase.co")
+  const match = hostname.match(/^([^.]+)\.supabase\.co$/);
+  if (!match) {
+    throw new Error(`Invalid Supabase URL format. Expected: https://[project-ref].supabase.co, got: ${supabaseUrl}`);
+  }
+  projectRef = match[1];
+} catch (error) {
+  if (error instanceof Error) {
+    throw new Error(`Invalid SUPABASE_URL: ${error.message}\nGot: ${supabaseUrl}`);
+  }
+  throw new Error(`Invalid SUPABASE_URL format: ${supabaseUrl}`);
+}
+
+// Construct DATABASE_URL from SUPABASE_URL and password
+// Format: postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
+const databasePassword = encodeURIComponent(env.SUPABASE_DB_PASSWORD.trim());
+const databaseUrl = `postgresql://postgres:${databasePassword}@db.${projectRef}.supabase.co:5432/postgres`;
+
+const client = postgres(databaseUrl, { max: 1 });
 
 export const db = drizzle(client, { schema });

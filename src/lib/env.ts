@@ -73,16 +73,19 @@ export const env = createEnv({
       .default("jiosaavn"),
 
     /* -----------------------------------------------------------------------------------------------
-     * Postgres Database URL (Supabase)
+     * Supabase Configuration
      * -----------------------------------------------------------------------------------------------*/
 
-    DATABASE_URL: z
+    SUPABASE_URL: z
       .string()
-      .min(1, { message: "Database URL is invalid or missing" }),
+      .url()
+      .min(1, { message: "Supabase URL is required" })
+      .describe("Supabase project URL (e.g., https://[project-ref].supabase.co)"),
 
-    /* -----------------------------------------------------------------------------------------------
-     * Supabase Service Role Key (for admin operations)
-     * -----------------------------------------------------------------------------------------------*/
+    SUPABASE_DB_PASSWORD: z
+      .string()
+      .min(1, { message: "Supabase database password is required" })
+      .describe("Supabase database password"),
 
     SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
 
