@@ -69,21 +69,27 @@ export const {
         return token;
       }
 
-      // Skip database query if it's the fallback admin user
-      if (token.sub === "admin-user-id" || token.email === "intellegin@pm.me") {
+      // Skip database query if it's the fallback admin user (by email check)
+      if (token.email === "intellegin@pm.me") {
         return token;
       }
 
-      // Try to get user from database (only if database is configured)
+      // Check if database is configured before attempting connection
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const dbPassword = process.env.SUPABASE_DB_PASSWORD;
+      
+      // Skip database query if not configured or using placeholder values
+      if (!supabaseUrl || !dbPassword || 
+          supabaseUrl === "your-supabase-url" || 
+          dbPassword === "your-database-password" ||
+          supabaseUrl.includes("your-") ||
+          dbPassword.includes("your-")) {
+        // Database not configured, use token data as-is
+        return token;
+      }
+
+      // Try to get user from database
       try {
-        // Check if database is available before querying
-        const supabaseUrl = process.env.SUPABASE_URL;
-        const dbPassword = process.env.SUPABASE_DB_PASSWORD;
-        
-        if (!supabaseUrl || !dbPassword) {
-          // Database not configured, use token data as-is
-          return token;
-        }
 
         const dbUser = await db.query.users.findFirst({
           where: (u, { eq }) => eq(u.id, token.sub!),
