@@ -39,30 +39,43 @@ export const authConfig: NextAuthConfig = {
             }
           }
 
-          // Try database lookup
+          // Check if database is configured before attempting connection
+          const supabaseUrl = process.env.SUPABASE_URL;
+          const dbPassword = process.env.SUPABASE_DB_PASSWORD;
+          
+          // Skip database query if not configured or using placeholder values
+          const isDbConfigured = supabaseUrl && dbPassword && 
+            supabaseUrl !== "your-supabase-url" && 
+            dbPassword !== "your-database-password" &&
+            !supabaseUrl.includes("your-") &&
+            !dbPassword.includes("your-");
+
+          // Try database lookup only if configured
           let dbUser = null;
-          try {
-            dbUser = await db.query.users.findFirst({
-              where: (u, { eq }) => eq(u.email, user.email),
-            });
-          } catch (dbError) {
-            console.warn("⚠️  Database connection failed:", dbError instanceof Error ? dbError.message : String(dbError));
-            
-            // If database fails and it's admin user, use fallback
-            if (user.email === ADMIN_EMAIL) {
-              const adminPassword = process.env.ADMIN_PASSWORD;
-              if (adminPassword && user.password === adminPassword) {
-                console.log("✅ Hardcoded admin login successful (database unavailable)");
-                return {
-                  id: "admin-user-id",
-                  email: ADMIN_EMAIL,
-                  name: "Admin User",
-                };
+          if (isDbConfigured) {
+            try {
+              dbUser = await db.query.users.findFirst({
+                where: (u, { eq }) => eq(u.email, user.email),
+              });
+            } catch (dbError) {
+              console.warn("⚠️  Database connection failed:", dbError instanceof Error ? dbError.message : String(dbError));
+              
+              // If database fails and it's admin user, use fallback
+              if (user.email === ADMIN_EMAIL) {
+                const adminPassword = process.env.ADMIN_PASSWORD;
+                if (adminPassword && user.password === adminPassword) {
+                  console.log("✅ Hardcoded admin login successful (database unavailable)");
+                  return {
+                    id: "admin-user-id",
+                    email: ADMIN_EMAIL,
+                    name: "Admin User",
+                  };
+                }
               }
+              
+              console.error("❌ Database unavailable and no fallback match");
+              return null;
             }
-            
-            console.error("❌ Database unavailable and no fallback match");
-            return null;
           }
 
           if (!dbUser) {

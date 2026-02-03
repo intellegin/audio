@@ -13,9 +13,19 @@ import { users } from "./db/schema";
 // Only use adapter if Supabase is configured
 function getAdapter(): Adapter | undefined {
   // Check if Supabase is configured (optional for local dev)
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+  const supabaseUrl = env.SUPABASE_URL || process.env.SUPABASE_URL;
+  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const dbPassword = env.SUPABASE_DB_PASSWORD || process.env.SUPABASE_DB_PASSWORD;
+  
+  // Don't use adapter if not configured or using placeholder values
+  if (!supabaseUrl || !serviceRoleKey || 
+      supabaseUrl === "your-supabase-url" || 
+      dbPassword === "your-database-password" ||
+      supabaseUrl.includes("your-") ||
+      (dbPassword && dbPassword.includes("your-"))) {
     return undefined; // No adapter - sessions will be JWT-only
   }
+  
   try {
     return DrizzleAdapter(db) as Adapter;
   } catch (error) {

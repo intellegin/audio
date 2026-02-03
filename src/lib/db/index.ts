@@ -14,26 +14,24 @@ function getDatabaseUrl(): string {
   const dbPassword = env.SUPABASE_DB_PASSWORD || process.env.SUPABASE_DB_PASSWORD;
   const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  // Validate SUPABASE_URL (required)
-  if (!supabaseUrl || typeof supabaseUrl !== "string" || supabaseUrl.trim() === "") {
+  // Check for placeholder values - don't attempt connection if using placeholders
+  if (!supabaseUrl || typeof supabaseUrl !== "string" || supabaseUrl.trim() === "" ||
+      supabaseUrl === "your-supabase-url" || supabaseUrl.includes("your-")) {
     throw new Error(
-      "SUPABASE_URL is required but not set. Please set SUPABASE_URL in your environment variables.\n" +
-      "Format: https://[project-ref].supabase.co\n" +
-      "You can find this in: Supabase Dashboard → Project Settings → API → Project URL"
+      "SUPABASE_URL is not configured. Database operations are disabled.\n" +
+      "Set SUPABASE_URL in your environment variables to enable database features.\n" +
+      "Format: https://[project-ref].supabase.co"
     );
   }
-
-  // Prefer database password over service role key
-  // Note: Even if not using Supabase, we need database connection for authentication
-  if (!dbPassword || typeof dbPassword !== "string" || dbPassword.trim() === "") {
-    if (!serviceRoleKey || typeof serviceRoleKey !== "string" || serviceRoleKey.trim() === "") {
+  
+  // Check for placeholder password
+  if (!dbPassword || typeof dbPassword !== "string" || dbPassword.trim() === "" ||
+      dbPassword === "your-database-password" || dbPassword.includes("your-")) {
+    if (!serviceRoleKey || typeof serviceRoleKey !== "string" || serviceRoleKey.trim() === "" ||
+        serviceRoleKey === "your-service-role-key" || serviceRoleKey.includes("your-")) {
       throw new Error(
-        "SUPABASE_DB_PASSWORD is required for database connections.\n" +
-        "Please set SUPABASE_DB_PASSWORD in your environment variables.\n" +
-        "You can find this in: Supabase Dashboard → Settings → Database → Database password\n" +
-        "Or reset it: Supabase Dashboard → Settings → Database → Reset database password\n\n" +
-        "Note: SUPABASE_SERVICE_ROLE_KEY is for API authentication, not database connections.\n" +
-        "Even if you're not using Supabase features, the database connection is needed for user authentication."
+        "SUPABASE_DB_PASSWORD is not configured. Database operations are disabled.\n" +
+        "Set SUPABASE_DB_PASSWORD in your environment variables to enable database features."
       );
     }
     console.warn(
@@ -80,6 +78,9 @@ function getDatabaseUrl(): string {
   // Format: postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
   
   const passwordToUse = dbPassword || serviceRoleKey; // Fallback to service role key if password not set (will fail)
+  if (!passwordToUse) {
+    throw new Error("No database password or service role key available");
+  }
   const encodedPassword = encodeURIComponent(passwordToUse.trim());
   
   return `postgresql://postgres:${encodedPassword}@db.${projectRef}.supabase.co:5432/postgres`;
