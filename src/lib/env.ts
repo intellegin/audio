@@ -85,7 +85,12 @@ export const env = createEnv({
     SUPABASE_SERVICE_ROLE_KEY: z
       .string()
       .optional()
-      .describe("Supabase service role key (used for database connection)"),
+      .describe("Supabase service role key (for API authentication, not database connection)"),
+
+    SUPABASE_DB_PASSWORD: z
+      .string()
+      .optional()
+      .describe("Supabase database password (required for direct PostgreSQL connections)"),
 
     /* -----------------------------------------------------------------------------------------------
      * Upstash Rate Limiting (Redis)

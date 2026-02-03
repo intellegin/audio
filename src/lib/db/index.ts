@@ -9,8 +9,13 @@ let dbInstance: ReturnType<typeof drizzle> | null = null;
 let postgresClient: ReturnType<typeof postgres> | null = null;
 
 function getDatabaseUrl(): string {
-  // Validate SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (required at runtime when database is accessed)
-  if (!env.SUPABASE_URL || typeof env.SUPABASE_URL !== "string" || env.SUPABASE_URL.trim() === "") {
+  // Check both env object and process.env (env object may filter out optional vars)
+  const supabaseUrl = env.SUPABASE_URL || process.env.SUPABASE_URL;
+  const dbPassword = env.SUPABASE_DB_PASSWORD || process.env.SUPABASE_DB_PASSWORD;
+  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  // Validate SUPABASE_URL (required)
+  if (!supabaseUrl || typeof supabaseUrl !== "string" || supabaseUrl.trim() === "") {
     throw new Error(
       "SUPABASE_URL is required but not set. Please set SUPABASE_URL in your environment variables.\n" +
       "Format: https://[project-ref].supabase.co\n" +
@@ -18,56 +23,59 @@ function getDatabaseUrl(): string {
     );
   }
 
-  if (!env.SUPABASE_SERVICE_ROLE_KEY || typeof env.SUPABASE_SERVICE_ROLE_KEY !== "string" || env.SUPABASE_SERVICE_ROLE_KEY.trim() === "") {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is required but not set. Please set SUPABASE_SERVICE_ROLE_KEY in your environment variables.\n" +
-      "You can find this in: Supabase Dashboard → Settings → API → Service Role Key (secret)"
-    );
+  // Prefer database password over service role key
+  if (!dbPassword || typeof dbPassword !== "string" || dbPassword.trim() === "") {
+    if (!serviceRoleKey || typeof serviceRoleKey !== "string" || serviceRoleKey.trim() === "") {
+      throw new Error(
+        "SUPABASE_DB_PASSWORD is required for database connections.\n" +
+        "Please set SUPABASE_DB_PASSWORD in your environment variables.\n" +
+        "You can find this in: Supabase Dashboard → Settings → Database → Database password\n\n" +
+        "Note: SUPABASE_SERVICE_ROLE_KEY is for API authentication, not database connections."
+      );
+    }
   }
 
   // Normalize SUPABASE_URL - remove leading = if present (common env var mistake)
-  let supabaseUrl = env.SUPABASE_URL.trim();
-  if (supabaseUrl.startsWith("=")) {
-    supabaseUrl = supabaseUrl.substring(1).trim();
+  let normalizedUrl = supabaseUrl.trim();
+  if (normalizedUrl.startsWith("=")) {
+    normalizedUrl = normalizedUrl.substring(1).trim();
   }
 
   // Remove trailing slash if present
-  if (supabaseUrl.endsWith("/")) {
-    supabaseUrl = supabaseUrl.slice(0, -1);
+  if (normalizedUrl.endsWith("/")) {
+    normalizedUrl = normalizedUrl.slice(0, -1);
   }
 
   // Extract project reference from SUPABASE_URL
   // Format: https://[project-ref].supabase.co
   let projectRef: string;
   try {
-    const url = new URL(supabaseUrl);
+    const url = new URL(normalizedUrl);
     const hostname = url.hostname;
     
     // Extract project ref from hostname (e.g., "rhvyeqwkvppghidcrxak" from "rhvyeqwkvppghidcrxak.supabase.co")
     const match = hostname.match(/^([^.]+)\.supabase\.co$/);
     if (!match) {
-      throw new Error(`Invalid Supabase URL format. Expected: https://[project-ref].supabase.co, got: ${supabaseUrl}`);
+      throw new Error(`Invalid Supabase URL format. Expected: https://[project-ref].supabase.co, got: ${normalizedUrl}`);
     }
     projectRef = match[1];
   } catch (error) {
     if (error instanceof Error) {
-      throw new Error(`Invalid SUPABASE_URL: ${error.message}\nGot: ${supabaseUrl}`);
+      throw new Error(`Invalid SUPABASE_URL: ${error.message}\nGot: ${normalizedUrl}`);
     }
-    throw new Error(`Invalid SUPABASE_URL format: ${supabaseUrl}`);
+    throw new Error(`Invalid SUPABASE_URL format: ${normalizedUrl}`);
   }
 
-  // Note: The service role key is a JWT token used for Supabase API authentication.
-  // For direct PostgreSQL connections (which Drizzle ORM uses), we typically need the database password.
-  // However, Supabase's connection pooling might accept the service role key in some configurations.
-  // We'll try using it with the direct connection URL format.
-  // If this doesn't work, you may need to use the database password instead.
-  
-  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY.trim();
-  const encodedKey = encodeURIComponent(serviceRoleKey);
-  
-  // Use direct connection URL format
+  // IMPORTANT: For direct PostgreSQL connections (which Drizzle ORM uses), we need the actual DATABASE PASSWORD,
+  // NOT the service role key. The service role key is a JWT token for API authentication.
+  //
+  // Use the database password for direct connection
   // Format: postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
-  return `postgresql://postgres:${encodedKey}@db.${projectRef}.supabase.co:5432/postgres`;
+  
+  const passwordToUse = dbPassword || serviceRoleKey; // Fallback to service role key if password not set (will fail)
+  const encodedPassword = encodeURIComponent(passwordToUse.trim());
+  
+  return `postgresql://postgres:${encodedPassword}@db.${projectRef}.supabase.co:5432/postgres`;
 }
 
 function getDb() {

@@ -87,6 +87,7 @@
     "@typescript-eslint/eslint-plugin": "7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "autoprefixer": "10.4.20",
+    "dotenv": "^17.2.3",
     "drizzle-kit": "^0.25.0",
     "eslint": "9.14.0",
     "eslint-config-next": "15.0.3",
@@ -101,6 +102,7 @@
     "prettier-plugin-tailwindcss": "^0.6.8",
     "sharp": "^0.33.5",
     "tailwindcss": "3.4.13",
+    "tsx": "^4.21.0",
     "typescript": "5.6.3"
   },
   "lint-staged": {
