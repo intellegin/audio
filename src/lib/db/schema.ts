@@ -24,7 +24,6 @@ export const users = pgTable("user", {
   username: text("username").unique(),
   password: text("password"), // Legacy field, using password_hash from Supabase
   password_hash: text("password_hash"), // Supabase auth.users table uses password_hash
-  role: text("role").default("user").notNull(), // Role: "admin", "user", or "guest"
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
 });
@@ -62,6 +61,35 @@ export const verificationTokens = pgTable(
   },
   (vt) => ({
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
+  })
+);
+
+/* -----------------------------------------------------------------------------------------------
+ * Roles tables
+ * -----------------------------------------------------------------------------------------------*/
+
+export const roles = pgTable("role", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull().unique(), // "admin"
+  description: text("description"),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+});
+
+export const userRoles = pgTable(
+  "user_role",
+  {
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    roleId: uuid("roleId")
+      .notNull()
+      .references(() => roles.id, { onDelete: "cascade" }),
+    createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+  },
+  (userRole) => ({
+    compoundKey: primaryKey({
+      columns: [userRole.userId, userRole.roleId],
+    }),
   })
 );
 
@@ -104,6 +132,12 @@ export const favorites = createTable("favorite", {
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+
+export type Role = typeof roles.$inferSelect;
+export type NewRole = typeof roles.$inferInsert;
+
+export type UserRole = typeof userRoles.$inferSelect;
+export type NewUserRole = typeof userRoles.$inferInsert;
 
 export type MyPlaylist = typeof myPlaylists.$inferSelect;
 export type NewPlaylist = typeof myPlaylists.$inferInsert;

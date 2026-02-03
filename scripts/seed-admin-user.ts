@@ -12,7 +12,7 @@ import { hash } from "bcryptjs";
 config({ path: resolve(process.cwd(), ".env.local") });
 
 import { db } from "../src/lib/db";
-import { users } from "../src/lib/db/schema";
+import { users, roles, userRoles } from "../src/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 async function seedAdminUser() {
@@ -29,14 +29,34 @@ async function seedAdminUser() {
   console.log("🌱 Seeding admin user...\n");
 
   try {
+    // Ensure admin role exists
+    let adminRole = await db.query.roles.findFirst({
+      where: (r, { eq }) => eq(r.name, "admin"),
+    });
+
+    if (!adminRole) {
+      console.log("Creating admin role...");
+      const [newRole] = await db
+        .insert(roles)
+        .values({
+          name: "admin",
+          description: "Administrator role with full access",
+        })
+        .returning();
+      adminRole = newRole;
+      console.log("✅ Admin role created!");
+    } else {
+      console.log("✅ Admin role already exists");
+    }
+
     // Check if user already exists
-    const existingUser = await db.query.users.findFirst({
+    let existingUser = await db.query.users.findFirst({
       where: (u, { eq }) => eq(u.email, adminEmail),
     });
 
     if (existingUser) {
       console.log(`⚠️  User ${adminEmail} already exists.`);
-      console.log("Updating password and role...");
+      console.log("Updating password...");
 
       const hashedPassword = await hash(adminPassword, 10);
 
@@ -44,21 +64,46 @@ async function seedAdminUser() {
         .update(users)
         .set({ 
           password_hash: hashedPassword,
-          role: "admin",
         })
         .where(eq(users.email, adminEmail));
 
-      console.log("✅ Admin user password and role updated successfully!");
+      // Check if user already has admin role
+      const existingUserRole = await db.query.userRoles.findFirst({
+        where: (ur, { and, eq }) =>
+          and(eq(ur.userId, existingUser.id), eq(ur.roleId, adminRole.id)),
+      });
+
+      if (!existingUserRole) {
+        console.log("Assigning admin role to user...");
+        await db.insert(userRoles).values({
+          userId: existingUser.id,
+          roleId: adminRole.id,
+        });
+        console.log("✅ Admin role assigned!");
+      } else {
+        console.log("✅ User already has admin role");
+      }
+
+      console.log("✅ Admin user password updated successfully!");
     } else {
       console.log(`Creating admin user: ${adminEmail}`);
 
       const hashedPassword = await hash(adminPassword, 10);
 
-      await db.insert(users).values({
-        email: adminEmail,
-        password_hash: hashedPassword,
-        name: "Admin User",
-        role: "admin",
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          email: adminEmail,
+          password_hash: hashedPassword,
+          name: "Admin User",
+        })
+        .returning();
+
+      // Assign admin role to new user
+      console.log("Assigning admin role to user...");
+      await db.insert(userRoles).values({
+        userId: newUser.id,
+        roleId: adminRole.id,
       });
 
       console.log("✅ Admin user created successfully!");

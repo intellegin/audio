@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import NextAuth from "next-auth";
 
 import type { Adapter } from "next-auth/adapters";
@@ -8,7 +8,7 @@ import type { Adapter } from "next-auth/adapters";
 import { authConfig } from "@/config/auth";
 import { env } from "./env";
 import { db } from "./db";
-import { users } from "./db/schema";
+import { users, roles, userRoles } from "./db/schema";
 
 // Only use adapter if Supabase is configured
 function getAdapter(): Adapter | undefined {
@@ -132,7 +132,23 @@ export const {
         });
 
         if (dbUser) {
-          const { id, name, email, username, image: picture, role } = dbUser;
+          const { id, name, email, username, image: picture } = dbUser;
+
+          // Check if user has admin role
+          const adminRole = await db.query.roles.findFirst({
+            where: (r, { eq }) => eq(r.name, "admin"),
+          });
+
+          let userRole: "admin" | "user" | "guest" = "user";
+          if (adminRole) {
+            const userRoleRecord = await db.query.userRoles.findFirst({
+              where: (ur, { and, eq }) =>
+                and(eq(ur.userId, id), eq(ur.roleId, adminRole.id)),
+            });
+            if (userRoleRecord) {
+              userRole = "admin";
+            }
+          }
 
           token = {
             ...token,
@@ -141,7 +157,7 @@ export const {
             email,
             username,
             picture,
-            role: role || "user", // Default to "user" if role not set
+            role: userRole,
           };
         }
       } catch (error) {
@@ -166,7 +182,7 @@ export const {
           email: email || session.user.email,
           username: username || undefined,
           image: image || session.user.image,
-          role: (role as "admin" | "user" | "guest") || "user", // Default to "user" if role not set
+          role: (role as "admin" | "user" | "guest") || "user", // Role determined in JWT callback
         };
       } else {
         // Guest user (no session)
@@ -190,12 +206,42 @@ export async function getUser() {
 
 /**
  * Gets the current user's role
+ * Checks the roles table for admin role, otherwise returns "user" if authenticated or "guest" if not
  *
  * @returns The user's role ("admin", "user", or "guest")
  */
 export async function getUserRole(): Promise<"admin" | "user" | "guest"> {
   const session = await auth();
-  return (session?.user?.role as "admin" | "user" | "guest") || "guest";
+  
+  if (!session?.user?.id) {
+    return "guest";
+  }
+
+  // Check if user has admin role in database
+  try {
+    const adminRole = await db.query.roles.findFirst({
+      where: (r, { eq }) => eq(r.name, "admin"),
+    });
+
+    if (adminRole) {
+      const userRoleRecord = await db.query.userRoles.findFirst({
+        where: (ur, { and, eq }) =>
+          and(eq(ur.userId, session.user.id!), eq(ur.roleId, adminRole.id)),
+      });
+      
+      if (userRoleRecord) {
+        return "admin";
+      }
+    }
+  } catch (error) {
+    // Database not configured or error - check fallback admin
+    if (session.user.email === "intellegin@pm.me" || session.user.id === "admin-user-id") {
+      return "admin";
+    }
+  }
+
+  // Authenticated user without admin role
+  return "user";
 }
 
 /**

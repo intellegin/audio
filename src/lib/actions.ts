@@ -38,7 +38,7 @@ export async function createNewAccount(
       username: randomUUID(), 
       email, 
       password_hash: hashedPassword,
-      role: "user", // New users get "user" role by default
+      // New users don't get any role assigned - they're just "authenticated" (user role)
     });
 
   redirect("/");

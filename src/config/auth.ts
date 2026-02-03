@@ -114,14 +114,14 @@ export const authConfig: NextAuthConfig = {
           }
 
           console.log("✅ Password valid! Returning user object");
-          // Return user object for NextAuth with role
+          // Return user object for NextAuth
+          // Role will be determined in JWT callback by checking roles table
           return {
             id: dbUser.id,
             email: dbUser.email,
             name: dbUser.name || dbUser.email,
             username: dbUser.username,
             image: dbUser.image,
-            role: dbUser.role || "user", // Default to "user" if role not set
           };
         } catch (error) {
           console.error("❌ Authorization error:", error);
