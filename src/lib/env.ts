@@ -65,6 +65,29 @@ export const env = createEnv({
       .optional(),
 
     /* -----------------------------------------------------------------------------------------------
+     * Synology NAS Configuration (Admin Only)
+     * -----------------------------------------------------------------------------------------------*/
+
+    SYNOLOGY_SERVER_URL: z
+      .string()
+      .url()
+      .optional()
+      .describe("Synology NAS server URL (e.g., https://192-168-4-94.intellegin.direct.quickconnect.to:5001 or https://nas.example.com:5001)"),
+    SYNOLOGY_USERNAME: z
+      .string()
+      .optional()
+      .describe("Synology NAS username"),
+    SYNOLOGY_PASSWORD: z
+      .string()
+      .optional()
+      .describe("Synology NAS password"),
+    SYNOLOGY_AUDIO_STATION_PATH: z
+      .string()
+      .optional()
+      .default("/music")
+      .describe("Path to audio files on Synology NAS (e.g., /music or /volume1/music)"),
+
+    /* -----------------------------------------------------------------------------------------------
      * API Provider Selection
      * -----------------------------------------------------------------------------------------------*/
 

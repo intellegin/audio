@@ -2,12 +2,14 @@
  * Unified Music API Layer
  * 
  * This file provides a unified interface for music data, routing to either
- * JioSaavn API, Plex API, or custom API based on configuration.
+ * JioSaavn API, Plex API, Synology NAS (admin only), or custom API based on configuration.
  */
 
 import { env } from "./env";
+import { isAdmin } from "./auth";
 import * as jiosaavnApi from "./jiosaavn-api";
 import * as plexApi from "./plex-api";
+import * as synologyApi from "./synology-api";
 
 // Re-export all types
 export * from "./jiosaavn-api";
@@ -37,8 +39,21 @@ function getApiProvider() {
 
 /**
  * Unified API functions that route to the correct provider
+ * Synology NAS is only available to admin users
  */
 export async function getHomeData(lang?: any[], mini = true) {
+  // Check if user is admin and Synology is configured
+  const isAdminUser = await isAdmin();
+  const synologyConfigured = env.SYNOLOGY_SERVER_URL && env.SYNOLOGY_USERNAME && env.SYNOLOGY_PASSWORD;
+  
+  if (isAdminUser && synologyConfigured) {
+    try {
+      return await synologyApi.getHomeData(lang, mini);
+    } catch (error) {
+      console.error("Synology API error, falling back to default provider:", error);
+    }
+  }
+  
   const provider = getApiProvider();
   
   if (provider === "plex") {
@@ -49,6 +64,17 @@ export async function getHomeData(lang?: any[], mini = true) {
 }
 
 export async function getSongDetails(token: string | string[], mini = false) {
+  const isAdminUser = await isAdmin();
+  const synologyConfigured = env.SYNOLOGY_SERVER_URL && env.SYNOLOGY_USERNAME && env.SYNOLOGY_PASSWORD;
+  
+  if (isAdminUser && synologyConfigured) {
+    try {
+      return await synologyApi.getSongDetails(token, mini);
+    } catch (error) {
+      console.error("Synology API error, falling back to default provider:", error);
+    }
+  }
+  
   const provider = getApiProvider();
   
   if (provider === "plex") {
@@ -59,6 +85,17 @@ export async function getSongDetails(token: string | string[], mini = false) {
 }
 
 export async function getAlbumDetails(token: string, mini = true) {
+  const isAdminUser = await isAdmin();
+  const synologyConfigured = env.SYNOLOGY_SERVER_URL && env.SYNOLOGY_USERNAME && env.SYNOLOGY_PASSWORD;
+  
+  if (isAdminUser && synologyConfigured) {
+    try {
+      return await synologyApi.getAlbumDetails(token, mini);
+    } catch (error) {
+      console.error("Synology API error, falling back to default provider:", error);
+    }
+  }
+  
   const provider = getApiProvider();
   
   if (provider === "plex") {
@@ -69,6 +106,17 @@ export async function getAlbumDetails(token: string, mini = true) {
 }
 
 export async function getArtistDetails(token: string, mini = true) {
+  const isAdminUser = await isAdmin();
+  const synologyConfigured = env.SYNOLOGY_SERVER_URL && env.SYNOLOGY_USERNAME && env.SYNOLOGY_PASSWORD;
+  
+  if (isAdminUser && synologyConfigured) {
+    try {
+      return await synologyApi.getArtistDetails(token, mini);
+    } catch (error) {
+      console.error("Synology API error, falling back to default provider:", error);
+    }
+  }
+  
   const provider = getApiProvider();
   
   if (provider === "plex") {
@@ -79,6 +127,17 @@ export async function getArtistDetails(token: string, mini = true) {
 }
 
 export async function searchAll(query: string) {
+  const isAdminUser = await isAdmin();
+  const synologyConfigured = env.SYNOLOGY_SERVER_URL && env.SYNOLOGY_USERNAME && env.SYNOLOGY_PASSWORD;
+  
+  if (isAdminUser && synologyConfigured) {
+    try {
+      return await synologyApi.searchAll(query);
+    } catch (error) {
+      console.error("Synology API error, falling back to default provider:", error);
+    }
+  }
+  
   const provider = getApiProvider();
   
   if (provider === "plex") {
