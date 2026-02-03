@@ -4,7 +4,6 @@ import { languages } from "@/config/languages";
 import { siteConfig } from "@/config/site";
 import { getFooterDetails } from "@/lib/music-api";
 import { Icons } from "../icons";
-import { ThemeToggleGroup } from "./theme-toggle-group";
 
 export async function SiteFooter() {
   const footerDetails = await getFooterDetails();
@@ -102,7 +101,7 @@ export async function SiteFooter() {
         </div>
       </div>
 
-      <div className="mx-auto mt-4 flex max-w-7xl flex-col items-center justify-between gap-4 border-t py-6 lg:flex-row">
+      <div className="mx-auto mt-4 flex max-w-7xl flex-col items-center justify-center gap-4 border-t py-6">
         <p className="max-w-4xl text-center text-xs text-muted-foreground lg:text-sm">
           <Link href="/" className="inline-flex items-center justify-center">
             <span className="font-heading text-base tracking-wide text-primary underline drop-shadow-md">
@@ -114,8 +113,6 @@ export async function SiteFooter() {
           property of their respective owners. This site is for educational
           purposes only.
         </p>
-
-        <ThemeToggleGroup className="w-fit" />
       </div>
     </footer>
   );

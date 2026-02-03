@@ -23,6 +23,8 @@ export default function Providers({ children, theme }: Props) {
       attribute="class"
       defaultTheme="system"
       enableSystem
+      forcedTheme={undefined}
+      disableTransitionOnChange={false}
       {...theme}
     >
       <SessionProvider>
