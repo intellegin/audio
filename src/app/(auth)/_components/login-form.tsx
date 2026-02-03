@@ -84,9 +84,22 @@ export function LoginForm() {
         toast.success("Signed in successfully", {
           description: "Redirecting...",
         });
-        // Redirect to callback URL or default
-        router.push(callbackUrl || DEFAULT_LOGIN_REDIRECT);
-        router.refresh();
+        
+        // Reset submitting state before redirect
+        setIsSubmitting(false);
+        
+        // Close modal first, then redirect
+        router.back();
+        
+        // Use setTimeout to ensure modal closes before redirect
+        setTimeout(() => {
+          const redirectUrl = callbackUrl || DEFAULT_LOGIN_REDIRECT;
+          // Use window.location for a hard redirect to ensure session is picked up
+          window.location.href = redirectUrl;
+        }, 150);
+      } else {
+        // If result.ok is false but no error, something unexpected happened
+        setIsSubmitting(false);
       }
     } catch (error) {
       const err = error as Error;

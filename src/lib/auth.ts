@@ -101,11 +101,11 @@ export const {
 
         session.user = {
           ...session.user,
-          id,
-          name,
-          email,
-          username,
-          image,
+          id: id || token.sub,
+          name: name || session.user.name,
+          email: email || session.user.email,
+          username: username || undefined,
+          image: image || session.user.image,
         };
       }
 
