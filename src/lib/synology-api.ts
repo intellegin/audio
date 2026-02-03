@@ -212,17 +212,56 @@ async function fileStationApiCall<T>(api: string, method: string, params: Record
  * List files in a directory
  */
 async function listFiles(folderPath: string, recursive = false): Promise<SynologyFile[]> {
-  const data = await fileStationApiCall<{ files: SynologyFile[] }>(
-    "SYNO.FileStation.List",
-    "list",
-    {
-      folder_path: folderPath,
-      additional: '["size","owner","time"]',
-      recursive: recursive ? "true" : "false",
-    }
-  );
+  try {
+    const data = await fileStationApiCall<{ files: SynologyFile[] }>(
+      "SYNO.FileStation.List",
+      "list",
+      {
+        folder_path: folderPath,
+        additional: '["size","owner","time"]',
+        recursive: recursive ? "true" : "false",
+      }
+    );
 
-  return data.files || [];
+    const files = data.files || [];
+    console.log(`📂 Listed ${files.length} items in ${folderPath} (recursive: ${recursive})`);
+    
+    // If recursive didn't work, manually traverse directories
+    if (recursive && files.length > 0) {
+      const allFiles: SynologyFile[] = [...files];
+      
+      const traverseDir = async (file: SynologyFile) => {
+        if (file.isdir) {
+          try {
+            const subFiles = await listFiles(file.path, false);
+            allFiles.push(...subFiles);
+            // Recursively process subdirectories
+            for (const subFile of subFiles) {
+              if (subFile.isdir) {
+                await traverseDir(subFile);
+              }
+            }
+          } catch (error) {
+            console.warn(`⚠️  Could not list directory ${file.path}:`, error);
+          }
+        }
+      };
+      
+      // Process all directories
+      for (const file of files) {
+        if (file.isdir) {
+          await traverseDir(file);
+        }
+      }
+      
+      return allFiles;
+    }
+    
+    return files;
+  } catch (error) {
+    console.error(`❌ Error listing files in ${folderPath}:`, error);
+    throw error;
+  }
 }
 
 /**
@@ -276,24 +315,26 @@ async function findAudioFiles(basePath: string): Promise<AudioFileInfo[]> {
   const audioFiles: AudioFileInfo[] = [];
   
   try {
+    console.log("🔍 Listing files in:", basePath, "(recursive)");
     const files = await listFiles(basePath, true);
+    console.log("🔍 Got", files.length, "total items from File Station");
     
-    const processFile = (file: SynologyFile) => {
+    // Process all files to find audio files
+    for (const file of files) {
       if (!file.isdir && isAudioFile(file.name)) {
         const folderPath = file.path.substring(0, file.path.lastIndexOf("/"));
         const info = parseAudioFileName(file.name, folderPath);
         info.mtime = file.additional?.time?.mtime || Date.now();
         audioFiles.push(info);
       }
-      
-      if (file.children) {
-        file.children.forEach(processFile);
-      }
-    };
+    }
     
-    files.forEach(processFile);
+    console.log("🔍 Found", audioFiles.length, "audio files");
   } catch (error) {
-    console.error("Error finding audio files:", error);
+    console.error("❌ Error finding audio files:", error);
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+    }
   }
   
   return audioFiles;
@@ -353,15 +394,21 @@ export async function getHomeData(lang?: Lang[], mini = true): Promise<Modules> 
   try {
     const baseUrl = getSynologyBaseUrl();
     const sessionId = await getSynologySession();
-    const audioPath = env.SYNOLOGY_AUDIO_STATION_PATH || "/audio";
+    const audioPath = env.SYNOLOGY_AUDIO_STATION_PATH || "/music";
+
+    console.log("📁 Synology getHomeData - Starting scan of:", audioPath);
 
     // Find all audio files
     const audioFiles = await findAudioFiles(audioPath);
+    
+    console.log("📁 Found audio files:", audioFiles.length);
     
     // Sort by modification time (newest first)
     const recentFiles = audioFiles
       .sort((a, b) => b.mtime - a.mtime)
       .slice(0, 20);
+    
+    console.log("📁 Recent files:", recentFiles.length);
 
     // Group by artist
     const artistMap = new Map<string, AudioFileInfo[]>();

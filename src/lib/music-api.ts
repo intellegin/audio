@@ -46,15 +46,32 @@ export async function getHomeData(lang?: any[], mini = true) {
   const isAdminUser = await isAdmin();
   const synologyConfigured = env.SYNOLOGY_SERVER_URL && env.SYNOLOGY_USERNAME && env.SYNOLOGY_PASSWORD;
   
+  console.log("🎵 getHomeData - Admin check:", {
+    isAdminUser,
+    synologyConfigured,
+    hasServerUrl: !!env.SYNOLOGY_SERVER_URL,
+    hasUsername: !!env.SYNOLOGY_USERNAME,
+    hasPassword: !!env.SYNOLOGY_PASSWORD,
+  });
+  
   if (isAdminUser && synologyConfigured) {
     try {
-      return await synologyApi.getHomeData(lang, mini);
+      console.log("🎵 Using Synology NAS API");
+      const data = await synologyApi.getHomeData(lang, mini);
+      console.log("🎵 Synology API returned:", {
+        sections: Object.keys(data),
+        totalEntries: Object.values(data).reduce((sum, section) => sum + (section.data?.length || 0), 0),
+      });
+      return data;
     } catch (error) {
-      console.error("Synology API error, falling back to default provider:", error);
+      console.error("❌ Synology API error, falling back to default provider:", error);
     }
+  } else {
+    console.log("🎵 Not using Synology - isAdmin:", isAdminUser, "configured:", synologyConfigured);
   }
   
   const provider = getApiProvider();
+  console.log("🎵 Using provider:", provider);
   
   if (provider === "plex") {
     return plexApi.getHomeData(lang, mini);
