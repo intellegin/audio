@@ -6,6 +6,9 @@ import type { NextAuthConfig } from "next-auth";
 import { db } from "@/lib/db";
 import { loginSchema } from "@/lib/validations";
 
+// Hardcoded admin user for fallback when database is unavailable
+const ADMIN_EMAIL = "intellegin@pm.me";
+
 export const authConfig: NextAuthConfig = {
   providers: [
     CredentialsProvider({
@@ -23,14 +26,50 @@ export const authConfig: NextAuthConfig = {
           const user = validatedFields.data;
           console.log("✅ Validation passed, looking up user:", user.email);
 
-          // Find user by email only
-          const dbUser = await db.query.users.findFirst({
-            where: (u, { eq }) => eq(u.email, user.email),
-          });
+          // Check if it's the admin user first (fallback when DB unavailable)
+          if (user.email === ADMIN_EMAIL) {
+            const adminPassword = process.env.ADMIN_PASSWORD;
+            if (adminPassword && user.password === adminPassword) {
+              console.log("✅ Hardcoded admin login successful (fallback mode)");
+              return {
+                id: "admin-user-id",
+                email: ADMIN_EMAIL,
+                name: "Admin User",
+              };
+            }
+          }
+
+          // Try database lookup
+          let dbUser = null;
+          try {
+            dbUser = await db.query.users.findFirst({
+              where: (u, { eq }) => eq(u.email, user.email),
+            });
+          } catch (dbError) {
+            console.warn("⚠️  Database connection failed:", dbError instanceof Error ? dbError.message : String(dbError));
+            
+            // If database fails and it's admin user, use fallback
+            if (user.email === ADMIN_EMAIL) {
+              const adminPassword = process.env.ADMIN_PASSWORD;
+              if (adminPassword && user.password === adminPassword) {
+                console.log("✅ Hardcoded admin login successful (database unavailable)");
+                return {
+                  id: "admin-user-id",
+                  email: ADMIN_EMAIL,
+                  name: "Admin User",
+                };
+              }
+            }
+            
+            console.error("❌ Database unavailable and no fallback match");
+            return null;
+          }
 
           if (!dbUser) {
             console.error("❌ User not found in database:", user.email);
-            console.error("💡 Run 'pnpm db:seed' to create the admin user");
+            if (user.email === ADMIN_EMAIL) {
+              console.error("💡 Run 'pnpm db:seed' to create the admin user in database");
+            }
             return null;
           }
 
@@ -73,6 +112,19 @@ export const authConfig: NextAuthConfig = {
           if (error instanceof Error) {
             console.error("Error message:", error.message);
             console.error("Error stack:", error.stack);
+            
+            // Fallback for admin user when database errors occur
+            if (credentials?.email === ADMIN_EMAIL) {
+              const adminPassword = process.env.ADMIN_PASSWORD;
+              if (adminPassword && credentials.password === adminPassword) {
+                console.log("✅ Hardcoded admin login successful (error fallback)");
+                return {
+                  id: "admin-user-id",
+                  email: ADMIN_EMAIL,
+                  name: "Admin User",
+                };
+              }
+            }
           }
           return null;
         }

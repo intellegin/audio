@@ -57,22 +57,39 @@ export const {
   },
 
   callbacks: {
-    jwt: async ({ token }) => {
-      const user = await db.query.users.findFirst({
-        where: (u, { eq }) => eq(u.id, token.sub!),
-      });
-
-      if (user) {
-        const { id, name, email, username, image: picture } = user;
-
+    jwt: async ({ token, user }) => {
+      // Handle fallback admin user (when database unavailable)
+      if (token.sub === "admin-user-id" || user?.id === "admin-user-id") {
         token = {
           ...token,
-          id,
-          name,
-          email,
-          username,
-          picture,
+          id: "admin-user-id",
+          email: user?.email || token.email || "intellegin@pm.me",
+          name: user?.name || "Admin User",
         };
+        return token;
+      }
+
+      // Try to get user from database
+      try {
+        const dbUser = await db.query.users.findFirst({
+          where: (u, { eq }) => eq(u.id, token.sub!),
+        });
+
+        if (dbUser) {
+          const { id, name, email, username, image: picture } = dbUser;
+
+          token = {
+            ...token,
+            id,
+            name,
+            email,
+            username,
+            picture,
+          };
+        }
+      } catch (error) {
+        console.warn("⚠️  Could not fetch user from database for JWT callback:", error);
+        // Use existing token data as fallback
       }
 
       return token;
