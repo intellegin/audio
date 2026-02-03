@@ -79,12 +79,12 @@ export const env = createEnv({
     SUPABASE_URL: z
       .string()
       .url()
-      .min(1, { message: "Supabase URL is required" })
+      .optional()
       .describe("Supabase project URL (e.g., https://[project-ref].supabase.co)"),
 
     SUPABASE_DB_PASSWORD: z
       .string()
-      .min(1, { message: "Supabase database password is required" })
+      .optional()
       .describe("Supabase database password"),
 
     SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),

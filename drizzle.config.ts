@@ -14,6 +14,13 @@ function getDatabaseUrl(): string {
 
   if (!supabaseUrl || !supabasePassword) {
     console.error("'SUPABASE_URL' and 'SUPABASE_DB_PASSWORD' must be set in the environment variables");
+    console.error("\nTo set them up:");
+    console.error("1. Create a .env.local file in the project root");
+    console.error("2. Add: SUPABASE_URL=https://[project-ref].supabase.co");
+    console.error("3. Add: SUPABASE_DB_PASSWORD=your-database-password");
+    console.error("\nYou can find these values in:");
+    console.error("- Supabase Dashboard → Project Settings → API → Project URL");
+    console.error("- Supabase Dashboard → Settings → Database → Database password");
     process.exit(1);
   }
 

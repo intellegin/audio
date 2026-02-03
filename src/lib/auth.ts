@@ -10,6 +10,21 @@ import { env } from "./env";
 import { db } from "./db";
 import { users } from "./db/schema";
 
+// Only use adapter if Supabase is configured
+function getAdapter(): Adapter | undefined {
+  // Check if Supabase is configured (optional for local dev)
+  if (!env.SUPABASE_URL || !env.SUPABASE_DB_PASSWORD) {
+    return undefined; // No adapter - sessions will be JWT-only
+  }
+  try {
+    return DrizzleAdapter(db) as Adapter;
+  } catch (error) {
+    // If database connection fails, fall back to JWT-only sessions
+    console.warn("Database adapter not available, using JWT-only sessions:", error);
+    return undefined;
+  }
+}
+
 export const {
   handlers,
   auth,
@@ -21,7 +36,7 @@ export const {
   secret: process.env.AUTH_SECRET || "development-secret-change-in-production",
   trustHost: true, // Required for Vercel deployments
 
-  adapter: DrizzleAdapter(db) as Adapter,
+  adapter: getAdapter(),
 
   session: {
     strategy: "jwt",
