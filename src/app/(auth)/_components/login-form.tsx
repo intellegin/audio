@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2, Mail } from "lucide-react";
 import { signIn } from "next-auth/react";
@@ -26,6 +26,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { DEFAULT_LOGIN_REDIRECT } from "@/config/routes";
 import { loginSchema } from "@/lib/validations";
 
 type FormData = z.infer<typeof loginSchema>;
@@ -38,15 +39,23 @@ const defaultValues: FormData = {
 export function LoginForm() {
   const [isPassVisible, setIsPassVisible] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const authError = searchParams.get("error");
 
-  if (authError === "OAuthAccountNotLinked") {
-    toast.error("OAuth Account Not Linked", {
-      description: "This account is already linked with another provider.",
-    });
-  }
+  const authError = searchParams.get("error");
+  const callbackUrl = searchParams.get("callbackUrl");
+
+  React.useEffect(() => {
+    if (authError === "CredentialsSignin") {
+      toast.error("Invalid credentials", {
+        description: "Please check your email and password.",
+      });
+    } else if (authError === "OAuthAccountNotLinked") {
+      toast.error("OAuth Account Not Linked", {
+        description: "This account is already linked with another provider.",
+      });
+    }
+  }, [authError]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(loginSchema),
@@ -57,15 +66,35 @@ export function LoginForm() {
     setIsSubmitting(true);
 
     try {
-      toast.promise(signIn("credentials", { ...formData }), {
-        loading: "Signing in...",
-        success: "You have been signed in.",
-        error: "Something went wrong.",
-        finally: () => setIsSubmitting(false),
+      const result = await signIn("credentials", {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
       });
+
+      if (result?.error) {
+        toast.error("Login failed", {
+          description: "Invalid email or password. Please try again.",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (result?.ok) {
+        toast.success("Signed in successfully", {
+          description: "Redirecting...",
+        });
+        // Redirect to callback URL or default
+        router.push(callbackUrl || DEFAULT_LOGIN_REDIRECT);
+        router.refresh();
+      }
     } catch (error) {
       const err = error as Error;
-      console.error(err.message);
+      console.error("Login error:", err.message);
+      toast.error("Something went wrong", {
+        description: "Please try again later.",
+      });
+      setIsSubmitting(false);
     }
   }
 

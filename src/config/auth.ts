@@ -10,9 +10,14 @@ export const authConfig: NextAuthConfig = {
   providers: [
     CredentialsProvider({
       async authorize(credentials) {
-        const validatedFields = loginSchema.safeParse(credentials);
+        try {
+          const validatedFields = loginSchema.safeParse(credentials);
 
-        if (validatedFields.success) {
+          if (!validatedFields.success) {
+            console.error("Validation error:", validatedFields.error);
+            return null;
+          }
+
           const user = validatedFields.data;
 
           // Find user by email only
@@ -20,19 +25,38 @@ export const authConfig: NextAuthConfig = {
             where: (u, { eq }) => eq(u.email, user.email),
           });
 
-          // Check password_hash first (Supabase), fallback to password (legacy)
-          const passwordToCheck = dbUser?.password_hash || dbUser?.password;
-          
-          if (dbUser && passwordToCheck) {
-            const isValid = await compare(user.password, passwordToCheck);
-
-            if (isValid) {
-              return dbUser;
-            }
+          if (!dbUser) {
+            console.error("User not found:", user.email);
+            return null;
           }
-        }
 
-        return null;
+          // Check password_hash first (Supabase), fallback to password (legacy)
+          const passwordToCheck = dbUser.password_hash || dbUser.password;
+          
+          if (!passwordToCheck) {
+            console.error("User has no password set:", user.email);
+            return null;
+          }
+
+          const isValid = await compare(user.password, passwordToCheck);
+
+          if (!isValid) {
+            console.error("Invalid password for user:", user.email);
+            return null;
+          }
+
+          // Return user object for NextAuth
+          return {
+            id: dbUser.id,
+            email: dbUser.email,
+            name: dbUser.name || dbUser.email,
+            username: dbUser.username,
+            image: dbUser.image,
+          };
+        } catch (error) {
+          console.error("Authorization error:", error);
+          return null;
+        }
       },
     }),
   ],
