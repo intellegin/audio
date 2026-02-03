@@ -824,12 +824,16 @@ export async function getTopSearches(): Promise<TopSearch[]> {
       url: `/song/${track.ratingKey}`,
       album: track.parentTitle || "",
       artist_map: track.grandparentTitle ? [{
-        id: track.grandparentKey || "",
-        name: track.grandparentTitle,
-        role: "primary_artist",
-        image: getPlexImageUrl(track.grandparentThumb, baseUrl, plexToken),
-        url: `/artist/${track.grandparentKey || ""}`,
-        type: "artist",
+        primary_artists: [{
+          id: track.grandparentKey || "",
+          name: track.grandparentTitle,
+          role: "primary_artist",
+          image: getPlexImageUrl(track.grandparentThumb, baseUrl, plexToken),
+          url: `/artist/${track.grandparentKey || ""}`,
+          type: "artist" as const,
+        }],
+        artists: [],
+        featured_artists: [],
       }] : [],
     }));
   } catch (error) {
