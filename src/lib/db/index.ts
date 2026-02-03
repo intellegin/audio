@@ -24,15 +24,22 @@ function getDatabaseUrl(): string {
   }
 
   // Prefer database password over service role key
+  // Note: Even if not using Supabase, we need database connection for authentication
   if (!dbPassword || typeof dbPassword !== "string" || dbPassword.trim() === "") {
     if (!serviceRoleKey || typeof serviceRoleKey !== "string" || serviceRoleKey.trim() === "") {
       throw new Error(
         "SUPABASE_DB_PASSWORD is required for database connections.\n" +
         "Please set SUPABASE_DB_PASSWORD in your environment variables.\n" +
-        "You can find this in: Supabase Dashboard → Settings → Database → Database password\n\n" +
-        "Note: SUPABASE_SERVICE_ROLE_KEY is for API authentication, not database connections."
+        "You can find this in: Supabase Dashboard → Settings → Database → Database password\n" +
+        "Or reset it: Supabase Dashboard → Settings → Database → Reset database password\n\n" +
+        "Note: SUPABASE_SERVICE_ROLE_KEY is for API authentication, not database connections.\n" +
+        "Even if you're not using Supabase features, the database connection is needed for user authentication."
       );
     }
+    console.warn(
+      "⚠️  WARNING: Using SUPABASE_SERVICE_ROLE_KEY as fallback. " +
+      "This will likely fail. Please set SUPABASE_DB_PASSWORD instead."
+    );
   }
 
   // Normalize SUPABASE_URL - remove leading = if present (common env var mistake)
