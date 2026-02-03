@@ -14,7 +14,16 @@ import { MainNav } from "./main-nav";
 import { MobileNav } from "./mobile-nav";
 
 export async function Navbar() {
-  const [user, megaMenu] = await Promise.all([getUser(), getMegaMenu()]);
+  let user, megaMenu;
+  
+  try {
+    [user, megaMenu] = await Promise.all([getUser(), getMegaMenu()]);
+  } catch (error) {
+    console.error("Navbar error:", error);
+    // Fallback to prevent navbar from crashing
+    user = undefined;
+    megaMenu = { artist: [], album: [], playlist: [], show: [] };
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">

@@ -14,7 +14,12 @@ export default async function Layout({ children }: React.PropsWithChildren) {
   let userPlaylists;
 
   if (user) {
-    userPlaylists = await getUserPlaylists(user.id);
+    try {
+      userPlaylists = await getUserPlaylists(user.id);
+    } catch (error) {
+      console.error("Failed to load user playlists:", error);
+      userPlaylists = undefined;
+    }
   }
 
   return (

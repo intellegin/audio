@@ -8,11 +8,17 @@ import { Button } from "@/components/ui/button";
 
 export function LogoutButton() {
   async function signOutHandler() {
-    toast.promise(signOut, {
-      loading: "Signing out...",
-      success: "You have been signed out.",
-      error: "Something went wrong.",
-    });
+    try {
+      toast.loading("Signing out...");
+      await signOut({ 
+        redirect: true,
+        callbackUrl: "/" 
+      });
+      toast.success("You have been signed out.");
+    } catch (error) {
+      toast.error("Something went wrong.");
+      console.error("Sign out error:", error);
+    }
   }
   return (
     <Button

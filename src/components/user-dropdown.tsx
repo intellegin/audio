@@ -31,11 +31,17 @@ export function UserDropdown({ user }: UserDropdownProps) {
   const { setTheme } = useTheme();
 
   async function signOutHandler() {
-    toast.promise(signOut, {
-      loading: "Signing out...",
-      success: "You have been signed out.",
-      error: "Something went wrong.",
-    });
+    try {
+      toast.loading("Signing out...");
+      await signOut({ 
+        redirect: true,
+        callbackUrl: "/" 
+      });
+      toast.success("You have been signed out.");
+    } catch (error) {
+      toast.error("Something went wrong.");
+      console.error("Sign out error:", error);
+    }
   }
 
   return (
@@ -129,14 +135,19 @@ export function UserDropdown({ user }: UserDropdownProps) {
           </DropdownMenuPortal>
         </DropdownMenuSub>
 
-        {user && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={signOutHandler}>
-              <LogOut size={16} className="mr-2" />
-              Log Out
-            </DropdownMenuItem>
-          </>
+        <DropdownMenuSeparator />
+        {user ? (
+          <DropdownMenuItem onClick={signOutHandler}>
+            <LogOut size={16} className="mr-2" />
+            Log Out
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem asChild>
+            <Link href="/login">
+              <User2 size={16} className="mr-2" />
+              Sign In
+            </Link>
+          </DropdownMenuItem>
         )}
       </DropdownMenuContent>
     </DropdownMenu>
