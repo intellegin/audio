@@ -8,22 +8,37 @@ import { favorites, myPlaylists } from "./schema";
 
 export const getUserPlaylists = unstable_cache(
   async (userId: string) => {
-    const playlists = await db.query.myPlaylists.findMany({
-      where: (playlist, { eq }) => eq(playlist.userId, userId),
-    });
-
-    return playlists;
+    // Return empty array if database is not configured
+    try {
+      const playlists = await db.query.myPlaylists.findMany({
+        where: (playlist, { eq }) => eq(playlist.userId, userId),
+      });
+      return playlists;
+    } catch (error) {
+      // Database not configured - return empty array
+      if (error instanceof Error && error.message.includes("not configured")) {
+        return [];
+      }
+      throw error;
+    }
   },
   ["user_playlists"],
   { tags: ["user_playlists"] }
 );
 
 export async function getPlaylistDetails(playlistId: string) {
-  const playlist = await db.query.myPlaylists.findFirst({
-    where: (playlist, { eq }) => eq(playlist.id, playlistId),
-  });
-
-  return playlist;
+  try {
+    const playlist = await db.query.myPlaylists.findFirst({
+      where: (playlist, { eq }) => eq(playlist.id, playlistId),
+    });
+    return playlist;
+  } catch (error) {
+    // Database not configured - return null
+    if (error instanceof Error && error.message.includes("not configured")) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function addSongsToPlaylist(playlistId: string, songs: string[]) {
@@ -48,11 +63,18 @@ export async function addSongsToPlaylist(playlistId: string, songs: string[]) {
 
 export const getUserFavorites = unstable_cache(
   async (userId: string) => {
-    const favorites = await db.query.favorites.findFirst({
-      where: (favorites, { eq }) => eq(favorites.userId, userId),
-    });
-
-    return favorites;
+    try {
+      const favorites = await db.query.favorites.findFirst({
+        where: (favorites, { eq }) => eq(favorites.userId, userId),
+      });
+      return favorites;
+    } catch (error) {
+      // Database not configured - return null
+      if (error instanceof Error && error.message.includes("not configured")) {
+        return null;
+      }
+      throw error;
+    }
   },
   ["user_favorites"],
   { tags: ["user_favorites"] }

@@ -92,10 +92,53 @@ function getDb() {
   return dbInstance;
 }
 
+// Helper to check if database is configured
+function isDatabaseConfigured(): boolean {
+  try {
+    const databaseUrl = getDatabaseUrl();
+    return databaseUrl !== null;
+  } catch {
+    return false;
+  }
+}
+
+// Create a mock query object that throws helpful errors
+function createMockQuery() {
+  return new Proxy({}, {
+    get(_target, tableName) {
+      return new Proxy({}, {
+        get(_target, method) {
+          return () => {
+            throw new Error(
+              `Database is not configured. Cannot execute db.query.${String(tableName)}.${String(method)}(). ` +
+              `Set SUPABASE_URL and SUPABASE_DB_PASSWORD to enable database features.`
+            );
+          };
+        },
+      });
+    },
+  });
+}
+
 // Export db as a proxy that lazily initializes the connection
 // Database operations are optional - if not configured, operations will fail gracefully
 export const db = new Proxy({} as ReturnType<typeof drizzle>, {
   get(_target, prop) {
+    // Check if database is configured first
+    if (!isDatabaseConfigured()) {
+      // Return mock objects for common properties
+      if (prop === "query") {
+        return createMockQuery();
+      }
+      // For other properties, return a function that throws
+      return () => {
+        throw new Error(
+          `Database is not configured. Cannot access db.${String(prop)}. ` +
+          `Set SUPABASE_URL and SUPABASE_DB_PASSWORD to enable database features.`
+        );
+      };
+    }
+
     try {
       const db = getDb();
       const value = db[prop as keyof ReturnType<typeof drizzle>];
@@ -105,11 +148,16 @@ export const db = new Proxy({} as ReturnType<typeof drizzle>, {
       }
       return value;
     } catch (error) {
-      // Database not configured - return a no-op function or throw a helpful error
+      // Database not configured - return appropriate mock
       if (error instanceof Error && error.message.includes("not configured")) {
-        // Return a function that throws a helpful error when called
+        if (prop === "query") {
+          return createMockQuery();
+        }
         return () => {
-          throw new Error("Database is not configured. Database operations are disabled.");
+          throw new Error(
+            `Database is not configured. Cannot access db.${String(prop)}. ` +
+            `Set SUPABASE_URL and SUPABASE_DB_PASSWORD to enable database features.`
+          );
         };
       }
       throw error;
