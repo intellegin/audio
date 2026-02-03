@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { languages } from "@/config/languages";
 import { siteConfig } from "@/config/site";
 import { getFooterDetails } from "@/lib/music-api";
 import { Icons } from "../icons";
@@ -81,23 +80,6 @@ export async function SiteFooter() {
               )}
             </div>
           ))}
-
-          <div className="flex flex-col gap-2.5">
-            <p className="text-sm font-semibold lg:text-sm">Languages</p>
-
-            <ul className="w-fit space-y-1">
-              {languages.map((lang) => (
-                <li
-                  key={lang}
-                  className="w-full text-xs text-muted-foreground hover:text-secondary-foreground"
-                >
-                  <Link
-                    href={`/album?lang=${lang.toLowerCase()}`}
-                  >{`${lang} Songs`}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
       </div>
 

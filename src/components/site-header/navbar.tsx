@@ -1,7 +1,4 @@
-import { cookies } from "next/headers";
 import Link from "next/link";
-
-import type { Lang } from "@/types";
 
 import { siteConfig } from "@/config/site";
 import { getUser } from "@/lib/auth";
@@ -13,14 +10,10 @@ import { SearchMenu } from "../search/search-menu";
 import { TopSearch } from "../search/top-search";
 import { buttonVariants } from "../ui/button";
 import { UserDropdown } from "../user-dropdown";
-import { LanguagePicker } from "./language-picker";
 import { MainNav } from "./main-nav";
 import { MobileNav } from "./mobile-nav";
 
 export async function Navbar() {
-  const cookiesStore = await cookies(); // this will trigger dynamic rendering
-  const languages = cookiesStore.get("language")?.value?.split(",") ?? [];
-
   const [user, megaMenu] = await Promise.all([getUser(), getMegaMenu()]);
 
   return (
@@ -40,8 +33,6 @@ export async function Navbar() {
 
         <div className="flex flex-1 items-center justify-end gap-2">
           <SearchMenu topSearch={<TopSearch />} className="hidden lg:flex" />
-
-          <LanguagePicker initialLanguages={languages as Lang[]} />
 
           <SignedOut>
             <Link

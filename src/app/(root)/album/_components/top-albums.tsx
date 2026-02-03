@@ -4,7 +4,7 @@ import React from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
-import type { Lang, TopAlbum } from "@/types";
+import type { TopAlbum } from "@/types";
 
 import { SliderCard } from "@/components/slider";
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
@@ -12,14 +12,13 @@ import { getTopAlbums } from "@/lib/jiosaavn-api";
 
 type TopAlbumsProps = {
   initialAlbums: TopAlbum;
-  lang?: Lang;
 };
 
-export function TopAlbums({ initialAlbums, lang }: TopAlbumsProps) {
+export function TopAlbums({ initialAlbums }: TopAlbumsProps) {
   const { data, fetchNextPage, isFetchingNextPage, hasNextPage } =
     useInfiniteQuery({
-      queryKey: ["top-albums", lang],
-      queryFn: ({ pageParam }) => getTopAlbums(pageParam, 50, lang),
+      queryKey: ["top-albums"],
+      queryFn: ({ pageParam }) => getTopAlbums(pageParam, 50),
       getNextPageParam: ({ last_page }, allPages) =>
         last_page ? null : allPages.length + 1,
       initialPageParam: 1,

@@ -1,19 +1,12 @@
-import { cookies } from "next/headers";
-
-import type { Lang } from "@/types";
-
 import { PreferenceSettings } from "../_components/preference-settings";
 
 export const metadata = {
   title: "Preferences Settings",
   description:
-    "Configure your preferences like language, music stream, download quality, etc.",
+    "Configure your preferences like music stream, download quality, etc.",
 };
 
 export default async function Page() {
-  const cookieStore = await cookies();
-  const languages = cookieStore.get("language")?.value?.split(",") ?? [];
-
   return (
     <div className="space-y-4">
       <div className="space-y-1 border-b p-4">
@@ -22,12 +15,11 @@ export default async function Page() {
         </h2>
 
         <p className="text-sm text-muted-foreground">
-          Configure your preferences like language, music stream, download
-          quality, etc.
+          Configure your preferences like music stream, download quality, etc.
         </p>
       </div>
 
-      <PreferenceSettings initialLanguages={languages as Lang[]} />
+      <PreferenceSettings />
     </div>
   );
 }

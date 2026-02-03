@@ -1,12 +1,10 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
-import { setCookie } from "cookies-next";
 import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
-import type { ImageQuality, Lang } from "@/types";
+import type { ImageQuality } from "@/types";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,8 +14,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { languages as languageList } from "@/config/languages";
 import {
   useDownloadQuality,
   useImageQuality,
@@ -28,63 +24,15 @@ import { QUALITIES_MAP } from "@/types";
 
 const IMAGE_QUALITIES: ImageQuality[] = ["low", "medium", "high"];
 
-type PreferenceSettingsProps = {
-  initialLanguages: Lang[];
-};
+type PreferenceSettingsProps = Record<string, never>;
 
-export function PreferenceSettings(props: PreferenceSettingsProps) {
-  const router = useRouter();
-
+export function PreferenceSettings() {
   const [streamQuality, setStreamQuality] = useStreamQuality();
   const [downloadQuality, setDownloadQuality] = useDownloadQuality();
   const [imageQuality, setImageQuality] = useImageQuality();
 
-  const [selectedLanguages, setSelectedLanguages] = React.useState(
-    props.initialLanguages
-  );
-
-  function updateLanguages() {
-    setCookie("language", selectedLanguages.join(","), {
-      path: "/",
-    });
-
-    toast.success("Language Preferences updated!", {
-      description: "Your language preferences have been updated.",
-    });
-
-    router.refresh();
-  }
-
   return (
     <div className="space-y-8 px-6">
-      <section id="language" className="space-y-4">
-        <h3 className="font-heading text-lg drop-shadow-md dark:bg-gradient-to-br dark:from-neutral-200 dark:to-neutral-600 dark:bg-clip-text dark:text-transparent sm:text-xl md:text-2xl">
-          Languages
-        </h3>
-
-        <ToggleGroup
-          type="multiple"
-          value={selectedLanguages}
-          onValueChange={(v) => setSelectedLanguages(v as Lang[])}
-          className="flex max-w-5xl flex-wrap justify-normal gap-2"
-        >
-          {languageList.map((lang) => (
-            <ToggleGroupItem
-              key={lang}
-              value={lang.toLowerCase()}
-              variant="outline"
-              className="w-24"
-            >
-              {lang}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-
-        <Button size="sm" onClick={updateLanguages}>
-          Save Preferences
-        </Button>
-      </section>
-
       <section className="space-y-2">
         <h3 className="pb-4 font-heading text-lg drop-shadow-md dark:bg-gradient-to-br dark:from-neutral-200 dark:to-neutral-600 dark:bg-clip-text dark:text-transparent sm:text-xl md:text-2xl">
           Quality Settings

@@ -1,6 +1,3 @@
-import type { Lang } from "@/types";
-
-import { LanguageBar } from "@/components/language-bar";
 import { siteConfig } from "@/config/site";
 import { getFeaturedPlaylists } from "@/lib/jiosaavn-api";
 import { FeaturedPlaylists } from "./_components/featured-playlists";
@@ -22,25 +19,22 @@ export const metadata = {
     },
   },
 };
-type PageProps = { searchParams: Promise<{ page?: number; lang?: Lang }> };
+type PageProps = { searchParams: Promise<{ page?: number }> };
 
 export default async function PlaylistsPage({ searchParams }: PageProps) {
-  const { page = 1, lang } = await searchParams;
+  const { page = 1 } = await searchParams;
 
-  const featuredPlaylists = await getFeaturedPlaylists(page, 50, lang);
+  const featuredPlaylists = await getFeaturedPlaylists(page, 50);
 
   return (
     <div className="space-y-4">
-      <LanguageBar language={lang} />
-
       <h1 className="font-heading text-2xl capitalize drop-shadow-md dark:bg-gradient-to-br dark:from-neutral-200 dark:to-neutral-600 dark:bg-clip-text dark:text-transparent sm:text-3xl md:text-4xl">
-        {lang ? `${lang} Music` : "Top"} Playlists
+        Top Playlists
       </h1>
 
       <FeaturedPlaylists
         key={featuredPlaylists.data[0].id}
         initialPlaylists={featuredPlaylists}
-        lang={lang}
       />
     </div>
   );

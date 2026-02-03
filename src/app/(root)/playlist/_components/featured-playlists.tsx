@@ -4,7 +4,7 @@ import React from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
-import type { FeaturedPlaylists, Lang } from "@/types";
+import type { FeaturedPlaylists } from "@/types";
 
 import { SliderCard } from "@/components/slider";
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
@@ -12,14 +12,13 @@ import { getFeaturedPlaylists } from "@/lib/jiosaavn-api";
 
 type Props = {
   initialPlaylists: FeaturedPlaylists;
-  lang?: Lang;
 };
 
-export function FeaturedPlaylists({ initialPlaylists, lang }: Props) {
+export function FeaturedPlaylists({ initialPlaylists }: Props) {
   const { data, fetchNextPage, isFetchingNextPage, hasNextPage } =
     useInfiniteQuery({
-      queryKey: ["featured-playlists", lang],
-      queryFn: ({ pageParam }) => getFeaturedPlaylists(pageParam, 50, lang),
+      queryKey: ["featured-playlists"],
+      queryFn: ({ pageParam }) => getFeaturedPlaylists(pageParam, 50),
       getNextPageParam: ({ last_page }, allPages) =>
         last_page ? null : allPages.length + 1,
       initialPageParam: 1,
