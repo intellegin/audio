@@ -78,7 +78,18 @@ export const env = createEnv({
 
     DATABASE_URL: z
       .string()
-      .min(1, { message: "Database URL is invalid or missing" }),
+      .min(1, { message: "Database URL is invalid or missing" })
+      .refine(
+        (url) => {
+          try {
+            new URL(url);
+            return url.startsWith("postgresql://") || url.startsWith("postgres://");
+          } catch {
+            return false;
+          }
+        },
+        { message: "DATABASE_URL must be a valid PostgreSQL connection string" }
+      ),
 
     /* -----------------------------------------------------------------------------------------------
      * Supabase Service Role Key (for admin operations)
