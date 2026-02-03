@@ -69,8 +69,22 @@ export const {
         return token;
       }
 
-      // Try to get user from database
+      // Skip database query if it's the fallback admin user
+      if (token.sub === "admin-user-id" || token.email === "intellegin@pm.me") {
+        return token;
+      }
+
+      // Try to get user from database (only if database is configured)
       try {
+        // Check if database is available before querying
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const dbPassword = process.env.SUPABASE_DB_PASSWORD;
+        
+        if (!supabaseUrl || !dbPassword) {
+          // Database not configured, use token data as-is
+          return token;
+        }
+
         const dbUser = await db.query.users.findFirst({
           where: (u, { eq }) => eq(u.id, token.sub!),
         });
@@ -88,8 +102,11 @@ export const {
           };
         }
       } catch (error) {
-        console.warn("⚠️  Could not fetch user from database for JWT callback:", error);
-        // Use existing token data as fallback
+        // Silently fail - use existing token data as fallback
+        // Only log if it's not a connection error (which is expected when DB is unavailable)
+        if (error instanceof Error && !error.message.includes("ENOTFOUND") && !error.message.includes("getaddrinfo")) {
+          console.warn("⚠️  Could not fetch user from database for JWT callback:", error.message);
+        }
       }
 
       return token;
