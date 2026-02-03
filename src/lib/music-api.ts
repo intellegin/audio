@@ -43,7 +43,13 @@ function getApiProvider() {
  */
 export async function getHomeData(lang?: any[], mini = true) {
   // Check if user is admin and Synology is configured
-  const isAdminUser = await isAdmin();
+  let isAdminUser = false;
+  try {
+    isAdminUser = await isAdmin();
+  } catch (error) {
+    console.error("❌ Error checking admin status:", error);
+  }
+  
   const synologyConfigured = env.SYNOLOGY_SERVER_URL && env.SYNOLOGY_USERNAME && env.SYNOLOGY_PASSWORD;
   
   console.log("🎵 getHomeData - Admin check:", {
@@ -65,6 +71,10 @@ export async function getHomeData(lang?: any[], mini = true) {
       return data;
     } catch (error) {
       console.error("❌ Synology API error, falling back to default provider:", error);
+      if (error instanceof Error) {
+        console.error("Error details:", error.message);
+        console.error("Stack:", error.stack);
+      }
     }
   } else {
     console.log("🎵 Not using Synology - isAdmin:", isAdminUser, "configured:", synologyConfigured);

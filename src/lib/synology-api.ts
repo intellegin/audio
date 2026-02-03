@@ -342,19 +342,31 @@ async function findAudioFiles(basePath: string): Promise<AudioFileInfo[]> {
 
 /**
  * Build download URL for audio file
+ * Returns an array of quality objects as expected by the UI
  */
-function getFileDownloadUrl(filePath: string, baseUrl: string, sessionId: string): string {
-  return `${baseUrl}/webapi/entry.cgi?api=SYNO.FileStation.Download&version=2&method=download&path=${encodeURIComponent(filePath)}&_sid=${sessionId}`;
+function getFileDownloadUrl(filePath: string, baseUrl: string, sessionId: string): Quality {
+  const downloadUrl = `${baseUrl}/webapi/entry.cgi?api=SYNO.FileStation.Download&version=2&method=download&path=${encodeURIComponent(filePath)}&_sid=${sessionId}`;
+  // Return array format for Quality type
+  return [
+    { quality: "poor", link: downloadUrl },
+    { quality: "low", link: downloadUrl },
+    { quality: "medium", link: downloadUrl },
+    { quality: "high", link: downloadUrl },
+    { quality: "excellent", link: downloadUrl },
+  ];
 }
 
 /**
  * Build image URL (placeholder for now)
+ * Returns an array of quality objects as expected by the UI
  */
 function getSynologyImageUrl(): Quality {
-  return {
-    quality: "500x500",
-    link: "/images/placeholder/album.jpg",
-  };
+  const placeholder = "/images/placeholder/album.jpg";
+  return [
+    { quality: "50x50", link: placeholder },
+    { quality: "150x150", link: placeholder },
+    { quality: "500x500", link: placeholder },
+  ];
 }
 
 /**
