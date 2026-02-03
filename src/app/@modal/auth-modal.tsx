@@ -5,14 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
 
 type AuthModalProps = React.PropsWithChildren<{
   title: string;
@@ -55,20 +52,6 @@ export function AuthModal({ title, description, children }: AuthModalProps) {
           </Button>
           .
         </p>
-
-        <Separator />
-
-        <DialogFooter className="flex pt-2">
-          <DialogClose asChild>
-            <Button
-              variant="secondary"
-              onClick={navigateBack}
-              className="w-full border text-lg font-semibold shadow-sm"
-            >
-              Close
-            </Button>
-          </DialogClose>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
