@@ -407,7 +407,11 @@ function getSynologyImageUrl(): Quality {
  * Map audio file to Song format
  */
 function mapFileToSong(file: AudioFileInfo, baseUrl: string, sessionId: string, index: number = 0): Song {
-  const fileId = Buffer.from(file.path).toString("base64").replace(/[+/=]/g, "");
+  // Use URL-safe base64 encoding (replace + with -, / with _, remove = padding)
+  const fileId = Buffer.from(file.path).toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
   
   return {
     id: fileId,
@@ -530,10 +534,20 @@ export async function getSongDetails(token: string | string[], mini = false): Pr
     const songs = fileIds
       .map(id => {
         try {
-          const filePath = Buffer.from(id, "base64").toString("utf-8");
+          // Decode URL-safe base64 (reverse the encoding: - to +, _ to /, add padding if needed)
+          let base64 = id.replace(/-/g, "+").replace(/_/g, "/");
+          // Add padding if needed (base64 strings should be multiple of 4)
+          while (base64.length % 4) {
+            base64 += "=";
+          }
+          const filePath = Buffer.from(base64, "base64").toString("utf-8");
           const file = allFiles.find(f => f.path === filePath);
+          if (!file) {
+            console.warn(`⚠️  File not found for token: ${id} (decoded path: ${filePath})`);
+          }
           return file;
-        } catch {
+        } catch (error) {
+          console.error(`❌ Error decoding token ${id}:`, error);
           return null;
         }
       })

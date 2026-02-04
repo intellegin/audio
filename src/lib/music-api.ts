@@ -92,16 +92,28 @@ export async function getSongDetails(token: string | string[], mini = false) {
   
   if (synologyConfigured) {
     try {
-      return await synologyApi.getSongDetails(token, mini);
+      const result = await synologyApi.getSongDetails(token, mini);
+      // If Synology returns songs, use it (even if empty, don't fallback)
+      if (result && result.songs !== undefined) {
+        return result;
+      }
     } catch (error) {
-      console.error("Synology API error, falling back to default provider:", error);
+      console.error("Synology API error:", error);
+      // Don't fallback if Synology is configured - throw the error instead
+      throw error;
     }
   }
   
+  // Only fallback if Synology is not configured
   const provider = getApiProvider();
   
   if (provider === "plex") {
     return plexApi.getSongDetails(token, mini);
+  }
+  
+  // Check if JioSaavn is configured before calling it
+  if (!env.JIOSAAVN_API_URL) {
+    throw new Error("No API provider configured. Please configure SYNOLOGY_SERVER_URL, PLEX_URL, or JIOSAAVN_API_URL in your environment variables.");
   }
   
   return jiosaavnApi.getSongDetails(token, mini);
