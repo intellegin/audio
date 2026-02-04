@@ -112,12 +112,19 @@ async function getSynologySession(): Promise<string> {
     // Login to get session ID for File Station
     const loginUrl = `${baseUrl}/webapi/auth.cgi?api=SYNO.API.Auth&version=3&method=login&account=${encodeURIComponent(username)}&passwd=${encodeURIComponent(password)}&session=FileStation&format=sid`;
     
+    // Add timeout for production (Vercel has 10s timeout for serverless functions)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    
     const response = await fetch(loginUrl, {
       method: "GET",
       headers: {
         "Accept": "application/json",
       },
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Synology login failed: ${response.statusText}`);

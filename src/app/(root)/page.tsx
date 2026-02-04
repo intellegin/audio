@@ -24,10 +24,26 @@ export const metadata = {
 };
 
 export default async function HomePage() {
-  const homedata = await getHomeData();
+  let homedata;
+  try {
+    homedata = await getHomeData();
+  } catch (error) {
+    console.error("Error fetching home data:", error);
+    // Return empty state on error to prevent hydration mismatch
+    return (
+      <div className="flex h-[calc(100vh-14rem)] flex-col items-center justify-center gap-4 px-4 text-center">
+        <h1 className="font-heading text-2xl drop-shadow dark:bg-gradient-to-br dark:from-neutral-200 dark:to-neutral-600 dark:bg-clip-text dark:text-transparent sm:text-3xl md:text-4xl">
+          Welcome to {siteConfig.name}
+        </h1>
+        <p className="max-w-md text-muted-foreground">
+          Unable to load music at this time. Please check your configuration.
+        </p>
+      </div>
+    );
+  }
   
   // Check if we have any data
-  const entries = Object.entries(homedata);
+  const entries = Object.entries(homedata || {});
   if (entries.length === 0) {
     return (
       <div className="flex h-[calc(100vh-14rem)] flex-col items-center justify-center gap-4 px-4 text-center">

@@ -64,11 +64,16 @@ export async function getHomeData(lang?: any[], mini = true) {
       });
       return data;
     } catch (error) {
+      // Log error but don't throw - fallback to default provider
       console.error("❌ Synology API error, falling back to default provider:", error);
       if (error instanceof Error) {
         console.error("Error details:", error.message);
-        console.error("Stack:", error.stack);
+        // Only log stack in development to avoid exposing sensitive info in production
+        if (process.env.NODE_ENV === "development") {
+          console.error("Stack:", error.stack);
+        }
       }
+      // Continue to fallback provider instead of throwing
     }
   }
   
