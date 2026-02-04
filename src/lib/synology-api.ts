@@ -474,12 +474,15 @@ async function findAudioFiles(basePath: string): Promise<AudioFileInfo[]> {
           // Fallback to filename parsing if metadata extraction failed
           const fallbackMetadata = parseAudioFileName(file.name, folderPath);
           
+          // Use filename without extension as final fallback for title
+          const filenameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+          
           const info: AudioFileInfo = {
             path: fullPath,
             name: file.name,
             artist: metadata.artist || fallbackMetadata.artist || "Unknown Artist",
             album: metadata.album || fallbackMetadata.album || "Unknown Album",
-            title: metadata.title || fallbackMetadata.title || file.name.replace(/\.[^/.]+$/, ""),
+            title: metadata.title || fallbackMetadata.title || filenameWithoutExt,
             track: metadata.track || fallbackMetadata.track,
             year: metadata.year || fallbackMetadata.year,
             duration: metadata.duration,
