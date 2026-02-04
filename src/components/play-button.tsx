@@ -150,6 +150,14 @@ export function PlayButton(props: PlayButtonProps) {
 
       setCurrentIndex(0);
       setIsPlayerInit(true);
+      }
+    } catch (error) {
+      console.error("❌ Error in playHandler:", error);
+      toast({
+        title: "Playback Error",
+        description: error instanceof Error ? error.message : "Failed to play song",
+        variant: "destructive",
+      });
     }
   }
 
