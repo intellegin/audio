@@ -475,9 +475,9 @@ export async function getHomeData(lang?: Lang[], mini = true): Promise<Modules> 
       .slice(0, 10)
       .map(([artist]) => ({
         explicit: false,
-        id: Buffer.from(artist).toString("base64").replace(/[+/=]/g, ""),
+        id: Buffer.from(artist).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, ""),
         image: getSynologyImageUrl(),
-        url: `/artist/${Buffer.from(artist).toString("base64").replace(/[+/=]/g, "")}`,
+        url: `/artist/${Buffer.from(artist).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "")}`,
         subtitle: "",
         name: artist,
         type: "artist" as const,
@@ -574,9 +574,19 @@ export async function getAlbumDetails(token: string, mini = true): Promise<Album
   try {
     const allFiles = await findAudioFiles(audioPath);
     
-    // Decode album name from token
-    const albumName = Buffer.from(token, "base64").toString("utf-8");
-    const albumFiles = allFiles.filter(f => f.album === albumName);
+    // Decode album key from URL-safe base64 token
+    let albumKey: string;
+    try {
+      let base64 = token.replace(/-/g, "+").replace(/_/g, "/");
+      while (base64.length % 4) {
+        base64 += "=";
+      }
+      albumKey = Buffer.from(base64, "base64").toString("utf-8");
+    } catch {
+      albumKey = token; // Fallback if not base64
+    }
+    const [artistName, albumName] = albumKey.split("-");
+    const albumFiles = allFiles.filter(f => f.artist === artistName && f.album === albumName);
     
     const songs = albumFiles.map((file, index) =>
       mapFileToSong(file, baseUrl, sessionId, index)
@@ -620,8 +630,17 @@ export async function getArtistDetails(token: string, mini = true): Promise<Arti
   try {
     const allFiles = await findAudioFiles(audioPath);
     
-    // Decode artist name from token
-    const artistName = Buffer.from(token, "base64").toString("utf-8");
+    // Decode artist name from URL-safe base64 token
+    let artistName: string;
+    try {
+      let base64 = token.replace(/-/g, "+").replace(/_/g, "/");
+      while (base64.length % 4) {
+        base64 += "=";
+      }
+      artistName = Buffer.from(base64, "base64").toString("utf-8");
+    } catch {
+      artistName = token; // Fallback if not base64
+    }
     const artistFiles = allFiles.filter(f => f.artist === artistName);
     
     // Group by album
@@ -641,7 +660,7 @@ export async function getArtistDetails(token: string, mini = true): Promise<Arti
       subtitle: artistName,
       type: "album" as const,
       image: getSynologyImageUrl(),
-      url: `/album/${Buffer.from(albumName).toString("base64").replace(/[+/=]/g, "")}`,
+      url: `/album/${Buffer.from(`${artistName}-${albumName}`).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "")}`,
       year: "",
       language: "unknown",
     }));
@@ -712,7 +731,7 @@ export async function searchAll(query: string): Promise<AllSearch> {
         subtitle: "",
         type: "artist" as const,
         image: getSynologyImageUrl(),
-        url: `/artist/${Buffer.from(artist).toString("base64").replace(/[+/=]/g, "")}`,
+        url: `/artist/${Buffer.from(artist).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "")}`,
       }));
 
     // Group by album
@@ -729,12 +748,12 @@ export async function searchAll(query: string): Promise<AllSearch> {
       .slice(0, 20)
       .map(album => ({
         explicit: false,
-        id: Buffer.from(album).toString("base64").replace(/[+/=]/g, ""),
+        id: Buffer.from(album).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, ""),
         name: album,
         subtitle: matchingFiles.find(f => f.album === album)?.artist || "Unknown Artist",
         type: "album" as const,
         image: getSynologyImageUrl(),
-        url: `/album/${Buffer.from(album).toString("base64").replace(/[+/=]/g, "")}`,
+        url: `/album/${Buffer.from(album).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "")}`,
         year: "",
         language: "unknown",
       }));
