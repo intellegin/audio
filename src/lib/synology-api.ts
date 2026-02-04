@@ -719,7 +719,10 @@ export async function getSongDetails(token: string | string[], mini = false): Pr
     const audioPath = env.SYNOLOGY_AUDIO_STATION_PATH || "/music";
 
     const fileIds = Array.isArray(token) ? token : [token];
+    console.log(`🎵 getSongDetails: Decoding ${fileIds.length} token(s)`);
+    
     const allFiles = await findAudioFiles(audioPath);
+    console.log(`🎵 getSongDetails: Found ${allFiles.length} total audio files`);
     
     const songs = fileIds
       .map(id => {
@@ -731,9 +734,14 @@ export async function getSongDetails(token: string | string[], mini = false): Pr
             base64 += "=";
           }
           const filePath = Buffer.from(base64, "base64").toString("utf-8");
+          console.log(`🎵 getSongDetails: Looking for file path: ${filePath}`);
           const file = allFiles.find(f => f.path === filePath);
           if (!file) {
-            console.warn(`⚠️  File not found for token: ${id} (decoded path: ${filePath})`);
+            console.warn(`⚠️  File not found for token: ${id}`);
+            console.warn(`⚠️  Decoded path: ${filePath}`);
+            console.warn(`⚠️  Available files (first 5):`, allFiles.slice(0, 5).map(f => f.path));
+          } else {
+            console.log(`✅ Found file: ${file.path}`);
           }
           return file;
         } catch (error) {
@@ -745,9 +753,13 @@ export async function getSongDetails(token: string | string[], mini = false): Pr
       .map((file, index) => mapFileToSong(file, baseUrl, sessionId, index));
 
     if (songs.length === 0) {
-      throw new Error(`No songs found for token: ${Array.isArray(token) ? token.join(", ") : token}`);
+      const errorMsg = `No songs found for token: ${Array.isArray(token) ? token.join(", ") : token}. ` +
+        `Make sure the file path matches exactly. Found ${allFiles.length} total files in ${audioPath}.`;
+      console.error(`❌ ${errorMsg}`);
+      throw new Error(errorMsg);
     }
 
+    console.log(`✅ getSongDetails: Returning ${songs.length} song(s)`);
     return { songs };
   } catch (error) {
     console.error("❌ Synology getSongDetails error:", error);

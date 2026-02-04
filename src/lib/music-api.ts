@@ -93,18 +93,17 @@ export async function getSongDetails(token: string | string[], mini = false) {
   if (synologyConfigured) {
     try {
       const result = await synologyApi.getSongDetails(token, mini);
-      // If Synology returns songs, use it (even if empty, don't fallback)
-      if (result && result.songs !== undefined) {
-        return result;
-      }
+      // If Synology returns songs (even if empty array), use it - don't fallback
+      return result;
     } catch (error) {
-      console.error("Synology API error:", error);
-      // Don't fallback if Synology is configured - throw the error instead
+      console.error("❌ Synology API error in getSongDetails:", error);
+      // If Synology is configured, don't fallback to other providers - throw the error
+      // This ensures users know Synology is the intended provider
       throw error;
     }
   }
   
-  // Only fallback if Synology is not configured
+  // Only use other providers if Synology is NOT configured
   const provider = getApiProvider();
   
   if (provider === "plex") {
