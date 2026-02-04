@@ -90,12 +90,26 @@ export function Player({ user, playlists }: PlayerProps) {
         streamQuality
       );
 
+      console.log("🎵 Loading audio:", {
+        song: queue[currentIndex].name,
+        src: audioSrc.substring(0, 100) + "...", // Log first 100 chars to avoid logging full URLs
+        quality: streamQuality,
+      });
+
       load(audioSrc, {
         html5: true,
         // onload: play,
         autoplay: true,
         initialMute: false,
         onend: onEndHandler,
+        onerror: (error) => {
+          console.error("❌ Audio playback error:", error);
+          toast({
+            title: "Playback Error",
+            description: `Failed to play "${queue[currentIndex].name}". The file may be unavailable or require authentication.`,
+            variant: "destructive",
+          });
+        },
       });
     }
   }, [queue, streamQuality, currentIndex, isPlayerInit]); // eslint-disable-line react-hooks/exhaustive-deps
