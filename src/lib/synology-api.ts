@@ -521,13 +521,18 @@ export async function getHomeData(lang?: Lang[], mini = true): Promise<Modules> 
  * Get song details from Synology NAS
  */
 export async function getSongDetails(token: string | string[], mini = false): Promise<SongObj> {
-  checkSynologyConfigured();
-  
-  const baseUrl = getSynologyBaseUrl();
-  const sessionId = await getSynologySession();
-  const audioPath = env.SYNOLOGY_AUDIO_STATION_PATH || "/audio";
-
   try {
+    checkSynologyConfigured();
+  } catch (error) {
+    console.error("❌ Synology not configured:", error);
+    throw new Error("Synology NAS is not configured. Please check your environment variables.");
+  }
+  
+  try {
+    const baseUrl = getSynologyBaseUrl();
+    const sessionId = await getSynologySession();
+    const audioPath = env.SYNOLOGY_AUDIO_STATION_PATH || "/music";
+
     const fileIds = Array.isArray(token) ? token : [token];
     const allFiles = await findAudioFiles(audioPath);
     
@@ -554,10 +559,18 @@ export async function getSongDetails(token: string | string[], mini = false): Pr
       .filter((file): file is AudioFileInfo => file !== null)
       .map((file, index) => mapFileToSong(file, baseUrl, sessionId, index));
 
+    if (songs.length === 0) {
+      throw new Error(`No songs found for token: ${Array.isArray(token) ? token.join(", ") : token}`);
+    }
+
     return { songs };
   } catch (error) {
-    console.error("Synology getSongDetails error:", error);
-    return { songs: [] };
+    console.error("❌ Synology getSongDetails error:", error);
+    // Re-throw with a clear error message instead of returning empty array
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Failed to fetch song details from Synology NAS");
   }
 }
 

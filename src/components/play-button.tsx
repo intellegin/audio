@@ -41,22 +41,33 @@ export function PlayButton(props: PlayButtonProps) {
   const sort = (searchParams.get("sort") as Sort) ?? "desc";
 
   async function playHandler() {
-    const songIndex = initialQueue.findIndex(
-      (song) => token === song.url.split("/").pop()
-    );
+    try {
+      const songIndex = initialQueue.findIndex(
+        (song) => token === song.url.split("/").pop()
+      );
 
-    if (songIndex !== -1) {
-      setCurrentIndex(songIndex);
-      return;
-    } else {
-      let queue: (Song | Episode)[] = [];
+      if (songIndex !== -1) {
+        setCurrentIndex(songIndex);
+        return;
+      } else {
+        let queue: (Song | Episode)[] = [];
 
-      switch (type) {
-        case "song": {
-          const songObj = await getSongDetails(token);
-          queue = songObj.songs;
-          break;
-        }
+        switch (type) {
+          case "song": {
+            try {
+              const songObj = await getSongDetails(token);
+              queue = songObj.songs;
+            } catch (error) {
+              console.error("❌ Error fetching song details:", error);
+              toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "Failed to load song details",
+                variant: "destructive",
+              });
+              return;
+            }
+            break;
+          }
         case "album": {
           const album = await getAlbumDetails(token);
           queue = album.songs ?? [];
