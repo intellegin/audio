@@ -191,12 +191,19 @@ async function fileStationApiCall<T>(api: string, method: string, params: Record
   const url = `${baseUrl}/webapi/entry.cgi?${queryParams.toString()}`;
 
   try {
+    // Add timeout for production (Vercel has 10s timeout for serverless functions)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    
     const response = await fetch(url, {
       method: "GET",
       headers: {
         "Accept": "application/json",
       },
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Synology API error: ${response.status} ${response.statusText}`);
@@ -210,7 +217,15 @@ async function fileStationApiCall<T>(api: string, method: string, params: Record
 
     return data.data as T;
   } catch (error) {
-    console.error("Synology File Station API call error:", error);
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        console.error("❌ Synology API call timeout (production timeout limit)");
+        throw new Error("Synology NAS connection timeout. Please check your network connection.");
+      }
+      console.error("❌ Synology File Station API call error:", error.message);
+    } else {
+      console.error("❌ Synology File Station API call error:", error);
+    }
     throw error;
   }
 }
