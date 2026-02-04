@@ -409,6 +409,7 @@ async function extractAudioMetadata(filePath: string, baseUrl: string, sessionId
 /**
  * Parse audio file name to extract metadata (fallback when ID3 tags aren't available)
  * Format: "Artist - Album - Track Number - Title.ext" or "Artist - Title.ext"
+ * Always uses filename (without extension) as final fallback for title
  */
 function parseAudioFileName(filename: string, folderPath: string): Partial<AudioFileInfo> {
   const nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
@@ -419,15 +420,25 @@ function parseAudioFileName(filename: string, folderPath: string): Partial<Audio
   const artist = pathParts[pathParts.length - 2] || parts[0] || "Unknown Artist";
   const album = pathParts[pathParts.length - 1] || parts[1] || "Unknown Album";
   
-  let title = nameWithoutExt;
+  // Always use filename as base, try to extract better title if possible
+  let title = nameWithoutExt; // Default: use full filename without extension
   let track = 0;
   
+  // If filename has " - " separators, try to extract structured data
   if (parts.length >= 2) {
+    // Last part is usually the title
     title = parts[parts.length - 1];
+    
+    // Check if second-to-last part is a track number
     if (parts.length >= 3 && /^\d+$/.test(parts[parts.length - 2])) {
       track = parseInt(parts[parts.length - 2], 10);
       title = parts[parts.length - 1];
     }
+  }
+  
+  // Ensure title is never empty - always fallback to filename
+  if (!title || title.trim() === "") {
+    title = nameWithoutExt;
   }
 
   return {
