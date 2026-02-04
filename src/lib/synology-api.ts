@@ -166,7 +166,19 @@ async function getSynologySession(): Promise<string> {
     
     return sessionId;
   } catch (error) {
-    console.error("Synology authentication error:", error);
+    // Clear session on error
+    sessionId = null;
+    sessionExpiry = 0;
+    
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        console.error("❌ Synology authentication timeout (production timeout limit)");
+        throw new Error("Synology NAS connection timeout. Please check your network connection and NAS accessibility.");
+      }
+      console.error("❌ Synology authentication error:", error.message);
+    } else {
+      console.error("❌ Synology authentication error:", error);
+    }
     throw error;
   }
 }
