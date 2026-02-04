@@ -8,8 +8,8 @@
  * Only accessible by admin users.
  */
 
+import { parseBuffer } from "music-metadata";
 import { env } from "./env";
-import { isAdmin } from "./auth";
 import type {
   Album,
   AllSearch,
@@ -60,7 +60,13 @@ type AudioFileInfo = {
   year?: number;
   track?: number;
   mtime: number;
+  duration?: number; // Duration in seconds from metadata
+  genre?: string;
+  picture?: Buffer; // Album art from metadata
 };
+
+// Metadata cache to avoid re-reading files
+const metadataCache = new Map<string, Partial<AudioFileInfo>>();
 
 /**
  * Check if Synology is configured
@@ -308,10 +314,103 @@ function isAudioFile(filename: string): boolean {
 }
 
 /**
- * Parse audio file name to extract metadata
+ * Extract metadata from audio file by fetching a chunk and parsing ID3 tags
+ */
+async function extractAudioMetadata(filePath: string, baseUrl: string, sessionId: string): Promise<Partial<AudioFileInfo>> {
+  // Check cache first
+  if (metadataCache.has(filePath)) {
+    return metadataCache.get(filePath)!;
+  }
+
+  const defaultMetadata: Partial<AudioFileInfo> = {
+    artist: undefined,
+    album: undefined,
+    title: undefined,
+    year: undefined,
+    track: undefined,
+    duration: undefined,
+    genre: undefined,
+  };
+
+  try {
+    // Get download URL for the file
+    const downloadUrl = `${baseUrl}/webapi/entry.cgi?api=SYNO.FileStation.Download&version=2&method=download&path=${encodeURIComponent(filePath)}&_sid=${sessionId}`;
+    
+    // Fetch first 64KB (enough for most metadata headers)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for metadata
+    
+    const response = await fetch(downloadUrl, {
+      method: "GET",
+      headers: {
+        "Range": "bytes=0-65535", // First 64KB
+      },
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+
+    if (!response.ok && response.status !== 206) { // 206 is Partial Content (expected for Range requests)
+      console.warn(`⚠️  Could not fetch metadata for ${filePath}: ${response.status}`);
+      return defaultMetadata;
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+      console.warn(`⚠️  Empty response for metadata ${filePath}`);
+      return defaultMetadata;
+    }
+
+    let buffer: Buffer;
+    try {
+      buffer = Buffer.from(arrayBuffer);
+    } catch (error) {
+      console.warn(`⚠️  Could not create buffer for ${filePath}:`, error);
+      return defaultMetadata;
+    }
+    
+    if (!buffer || buffer.length === 0) {
+      console.warn(`⚠️  Empty buffer for metadata ${filePath}`);
+      return defaultMetadata;
+    }
+    
+    // Parse metadata using music-metadata
+    let metadata;
+    try {
+      metadata = await parseBuffer(buffer, { mimeType: response.headers.get("content-type") || undefined });
+    } catch (parseError) {
+      console.warn(`⚠️  Could not parse metadata for ${filePath}:`, parseError instanceof Error ? parseError.message : String(parseError));
+      return defaultMetadata;
+    }
+    
+    const extracted: Partial<AudioFileInfo> = {
+      artist: metadata.common.artist || metadata.common.artists?.[0],
+      album: metadata.common.album,
+      title: metadata.common.title,
+      year: metadata.common.year,
+      track: metadata.common.track?.no,
+      duration: metadata.format.duration ? Math.round(metadata.format.duration) : undefined,
+      genre: metadata.common.genre?.[0],
+      picture: metadata.common.picture?.[0]?.data,
+    };
+
+    // Cache the result
+    metadataCache.set(filePath, extracted);
+    
+    return extracted;
+  } catch (error) {
+    console.warn(`⚠️  Error extracting metadata for ${filePath}:`, error instanceof Error ? error.message : String(error));
+    // Cache the empty result to avoid retrying
+    metadataCache.set(filePath, defaultMetadata);
+    return defaultMetadata;
+  }
+}
+
+/**
+ * Parse audio file name to extract metadata (fallback when ID3 tags aren't available)
  * Format: "Artist - Album - Track Number - Title.ext" or "Artist - Title.ext"
  */
-function parseAudioFileName(filename: string, folderPath: string): AudioFileInfo {
+function parseAudioFileName(filename: string, folderPath: string): Partial<AudioFileInfo> {
   const nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
   const parts = nameWithoutExt.split(" - ");
   
@@ -332,18 +431,15 @@ function parseAudioFileName(filename: string, folderPath: string): AudioFileInfo
   }
 
   return {
-    path: `${folderPath}/${filename}`,
-    name: filename,
     artist,
     album,
     title,
     track,
-    mtime: Date.now(),
   };
 }
 
 /**
- * Recursively find all audio files in a directory
+ * Recursively find all audio files in a directory and extract metadata
  */
 async function findAudioFiles(basePath: string): Promise<AudioFileInfo[]> {
   const audioFiles: AudioFileInfo[] = [];
@@ -353,17 +449,86 @@ async function findAudioFiles(basePath: string): Promise<AudioFileInfo[]> {
     const files = await listFiles(basePath, true);
     console.log("🔍 Got", files.length, "total items from File Station");
     
+    const baseUrl = getSynologyBaseUrl();
+    const sessionId = await getSynologySession();
+    
     // Process all files to find audio files
-    for (const file of files) {
-      if (!file.isdir && isAudioFile(file.name)) {
-        const folderPath = file.path.substring(0, file.path.lastIndexOf("/"));
-        const info = parseAudioFileName(file.name, folderPath);
-        info.mtime = file.additional?.time?.mtime || Date.now();
-        audioFiles.push(info);
-      }
+    const audioFileList = files.filter(file => !file.isdir && isAudioFile(file.name));
+    console.log(`🎵 Processing ${audioFileList.length} audio files for metadata extraction...`);
+    
+    // Process in batches to avoid overwhelming the server (limit to first 50 for performance)
+    const maxFiles = 50;
+    const filesToProcess = audioFileList.slice(0, maxFiles);
+    const batchSize = 5; // Process 5 at a time
+    
+    for (let i = 0; i < filesToProcess.length; i += batchSize) {
+      const batch = filesToProcess.slice(i, i + batchSize);
+      const batchPromises = batch.map(async (file) => {
+        try {
+          const folderPath = file.path.substring(0, file.path.lastIndexOf("/"));
+          const fullPath = file.path;
+          
+          // Try to extract metadata from ID3 tags
+          const metadata = await extractAudioMetadata(fullPath, baseUrl, sessionId);
+          
+          // Fallback to filename parsing if metadata extraction failed
+          const fallbackMetadata = parseAudioFileName(file.name, folderPath);
+          
+          const info: AudioFileInfo = {
+            path: fullPath,
+            name: file.name,
+            artist: metadata.artist || fallbackMetadata.artist || "Unknown Artist",
+            album: metadata.album || fallbackMetadata.album || "Unknown Album",
+            title: metadata.title || fallbackMetadata.title || file.name.replace(/\.[^/.]+$/, ""),
+            track: metadata.track || fallbackMetadata.track,
+            year: metadata.year || fallbackMetadata.year,
+            duration: metadata.duration,
+            genre: metadata.genre,
+            picture: metadata.picture,
+            mtime: file.additional?.time?.mtime || Date.now(),
+          };
+          
+          return info;
+        } catch (error) {
+          console.warn(`⚠️  Error processing ${file.name}:`, error instanceof Error ? error.message : String(error));
+          // Return file with fallback metadata
+          const folderPath = file.path.substring(0, file.path.lastIndexOf("/"));
+          const fallback = parseAudioFileName(file.name, folderPath);
+          return {
+            path: file.path,
+            name: file.name,
+            artist: fallback.artist,
+            album: fallback.album,
+            title: fallback.title,
+            track: fallback.track,
+            mtime: file.additional?.time?.mtime || Date.now(),
+          } as AudioFileInfo;
+        }
+      });
+      
+      const batchResults = await Promise.all(batchPromises);
+      audioFiles.push(...batchResults);
     }
     
-    console.log("🔍 Found", audioFiles.length, "audio files");
+    // Add remaining files with fallback metadata (no metadata extraction for performance)
+    if (audioFileList.length > maxFiles) {
+      const remaining = audioFileList.slice(maxFiles);
+      remaining.forEach(file => {
+        const folderPath = file.path.substring(0, file.path.lastIndexOf("/"));
+        const fallback = parseAudioFileName(file.name, folderPath);
+        audioFiles.push({
+          path: file.path,
+          name: file.name,
+          artist: fallback.artist,
+          album: fallback.album,
+          title: fallback.title,
+          track: fallback.track,
+          mtime: file.additional?.time?.mtime || Date.now(),
+        } as AudioFileInfo);
+      });
+    }
+    
+    console.log("🔍 Found", audioFiles.length, "audio files (", filesToProcess.length, "with metadata extraction)");
   } catch (error) {
     console.error("❌ Error finding audio files:", error);
     if (error instanceof Error) {
@@ -413,20 +578,26 @@ function mapFileToSong(file: AudioFileInfo, baseUrl: string, sessionId: string, 
     .replace(/\//g, "_")
     .replace(/=/g, "");
   
+  // Use metadata if available, fallback to filename parsing
+  const songName = file.title || file.name.replace(/\.[^/.]+$/, "");
+  const artistName = file.artist || "Unknown Artist";
+  const albumName = file.album || "Unknown Album";
+  const duration = file.duration || 0;
+  
   return {
     id: fileId,
-    name: file.title || file.name.replace(/\.[^/.]+$/, ""),
-    subtitle: file.artist || "Unknown Artist",
+    name: songName,
+    subtitle: artistName,
     type: "song",
-    image: getSynologyImageUrl(),
+    image: getSynologyImageUrl(), // TODO: Use file.picture if available
     download_url: getFileDownloadUrl(file.path, baseUrl, sessionId),
     url: `/song/${fileId}`,
-    album: file.album || "Unknown Album",
-    primary_artists: file.artist || "Unknown Artist",
-    singers: file.artist || "Unknown Artist",
+    album: albumName,
+    primary_artists: artistName,
+    singers: artistName,
     language: "unknown",
-    duration: 0,
-    year: file.year?.toString() || "",
+    duration: duration,
+    year: file.year || 0,
     play_count: "0",
     release_date: file.year?.toString() || "",
     explicit: false,
