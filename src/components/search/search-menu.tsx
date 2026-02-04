@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useEventListener } from "@/hooks/use-event-listner";
 import { useIsTyping } from "@/hooks/use-store";
+import { useIsMounted } from "@/hooks/use-is-mouted";
 import { searchAll } from "@/lib/jiosaavn-api";
 import { cn, isMacOs } from "@/lib/utils";
 import { SearchAll } from "./search-all";
@@ -23,6 +24,7 @@ type SearchMenuProps = {
 
 export function SearchMenu({ topSearch, className }: SearchMenuProps) {
   const pathname = usePathname();
+  const isMounted = useIsMounted();
 
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -80,7 +82,7 @@ export function SearchMenu({ topSearch, className }: SearchMenuProps) {
           <span className="hidden lg:inline-block">Search...</span>
 
           <kbd className="pointer-events-none ml-auto hidden h-6 select-none items-center rounded border bg-muted px-1.5 font-mono text-[10px] font-medium lg:block">
-            <span className="text-xs">{isMacOs() ? "⌘" : "Ctrl"}</span> K
+            <span className="text-xs">{isMounted() && isMacOs() ? "⌘" : "Ctrl"}</span> K
           </kbd>
         </Button>
       </DialogTrigger>
